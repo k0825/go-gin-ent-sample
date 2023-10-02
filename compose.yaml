@@ -1,0 +1,10 @@
+version: '3'
+services:
+  backend:
+    build: .
+    container_name: backend
+    volumes:
+      - .:/go/src/app
+    working_dir: /go/src/app
+    ports:
+      - "8080:8080"
