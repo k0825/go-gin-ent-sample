@@ -1,14 +1,26 @@
 version: '3'
 services:
   backend:
-    build: .
+    build: todolist
+    dockerfile: Dockerfile.dev
     container_name: backend
     volumes:
-      - .:/go/src/app
+      - ./todolist:/go/src/app
     working_dir: /go/src/app
     ports:
       - "8080:8080"
 
   db:
     build:
-      image: 
+      image: postgres:15
+      container_name: db
+      restart: always
+      environment:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_DB: todolist
+      ports:
+        - "5432:5432"
+      volumes:
+        - ./postgres/init:/docker-entrypoint-initdb.d
+
