@@ -70,7 +70,7 @@ func (tdc *TodoController) GetTodo(ctx *gin.Context) error {
 		UpdatedAt:   jsonTime{response.UpdatedAt},
 	}
 
-	ctx.JSON(200, gin.H{"message": resJson})
+	ctx.JSON(200, resJson)
 
 	return nil
 }
