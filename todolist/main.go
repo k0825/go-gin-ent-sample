@@ -7,6 +7,7 @@ import (
 	"github.com/k0825/go-gin-ent-sample/datasource"
 	repository "github.com/k0825/go-gin-ent-sample/repository/implements"
 	usecase "github.com/k0825/go-gin-ent-sample/usecase/implements"
+	_ "github.com/lib/pq"
 )
 
 func setupRouter() *gin.Engine {
@@ -28,7 +29,7 @@ func setupRouter() *gin.Engine {
 	ctrl := controller.NewTodoController(adFindByIdUsecase)
 
 	r := gin.Default()
-	r.GET("/todo/:id", func(ctx *gin.Context) {
+	r.GET("/todos/:id", func(ctx *gin.Context) {
 		ctrl.GetTodo(ctx)
 	})
 

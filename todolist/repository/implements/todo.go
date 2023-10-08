@@ -29,7 +29,7 @@ func (tr *TodoRepository) FindById(ctx context.Context, todoId domain.TodoId) (*
 
 	if err != nil {
 		nfErr := domainerrors.NewNotFoundError("Todo", todoId.String())
-		wrapErr := errors.Wrap(err, nfErr.Error())
+		wrapErr := errors.Wrap(nfErr, err.Error())
 		return nil, wrapErr
 	}
 
@@ -37,7 +37,7 @@ func (tr *TodoRepository) FindById(ctx context.Context, todoId domain.TodoId) (*
 
 	if err != nil {
 		nfErr := domainerrors.NewNotFoundError("Tag", todoId.String())
-		wrapErr := errors.Wrap(err, nfErr.Error())
+		wrapErr := errors.Wrap(nfErr, err.Error())
 		return nil, wrapErr
 	}
 

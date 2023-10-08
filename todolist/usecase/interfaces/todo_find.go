@@ -13,9 +13,9 @@ type TodoFindRequest struct {
 }
 
 func NewTodoFindRequest(id uuid.UUID) (*TodoFindRequest, error) {
-	adId := models.NewTodoId(id)
+	todoId := models.NewTodoId(id)
 
-	return &TodoFindRequest{Id: *adId}, nil
+	return &TodoFindRequest{Id: *todoId}, nil
 }
 
 type TodoFindResponse struct {
