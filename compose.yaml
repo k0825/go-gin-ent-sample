@@ -8,3 +8,7 @@ services:
     working_dir: /go/src/app
     ports:
       - "8080:8080"
+
+  db:
+    build:
+      image: 

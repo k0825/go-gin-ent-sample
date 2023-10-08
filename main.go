@@ -1,17 +1,41 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"github.com/k0825/go-gin-ent-sample/config"
+	"github.com/k0825/go-gin-ent-sample/controller"
+	"github.com/k0825/go-gin-ent-sample/datasource"
+	repository "github.com/k0825/go-gin-ent-sample/repository/implements"
+	usecase "github.com/k0825/go-gin-ent-sample/usecase/implements"
 )
 
-func main() {
+func setupRouter() *gin.Engine {
+
+	conf := config.NewConfig()
+	client, err := datasource.NewConnection(conf)
+
+	if err != nil {
+		panic(err)
+	}
+
+	adRepository, err := repository.NewTodoRepository(client)
+
+	if err != nil {
+		panic(err)
+	}
+
+	adFindByIdUsecase := usecase.NewTodoFindByIdInteractor(adRepository)
+	ctrl := controller.NewTodoController(adFindByIdUsecase)
+
 	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
-		})
+	r.GET("/todo/:id", func(ctx *gin.Context) {
+		ctrl.GetTodo(ctx)
 	})
+
+	return r
+}
+
+func main() {
+	r := setupRouter()
 	r.Run()
 }
