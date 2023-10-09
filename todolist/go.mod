@@ -7,6 +7,7 @@ require (
 	entgo.io/ent v0.12.4
 	github.com/cockroachdb/errors v1.11.1
 	github.com/gin-gonic/gin v1.9.1
+	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.1
 	github.com/google/wire v0.5.0
 	github.com/lib/pq v1.10.9
