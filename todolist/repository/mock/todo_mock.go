@@ -7,6 +7,7 @@ package mock_interfaces
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 	models "github.com/k0825/go-gin-ent-sample/models"
@@ -36,18 +37,18 @@ func (m *MockTodoRepositoryInterface) EXPECT() *MockTodoRepositoryInterfaceMockR
 }
 
 // Create mocks base method.
-func (m *MockTodoRepositoryInterface) Create(arg0 context.Context, arg1 *models.Todo) (*models.Todo, error) {
+func (m *MockTodoRepositoryInterface) Create(arg0 context.Context, arg1 models.TodoTitle, arg2 models.TodoDescription, arg3 models.TodoImage, arg4 []models.TodoTag, arg5, arg6 time.Time) (*models.Todo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", arg0, arg1)
+	ret := m.ctrl.Call(m, "Create", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(*models.Todo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockTodoRepositoryInterfaceMockRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockTodoRepositoryInterfaceMockRecorder) Create(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockTodoRepositoryInterface)(nil).Create), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockTodoRepositoryInterface)(nil).Create), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 // FindById mocks base method.
