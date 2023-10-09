@@ -19,18 +19,23 @@ func setupRouter() *gin.Engine {
 		panic(err)
 	}
 
-	adRepository, err := repository.NewTodoRepository(client)
+	todoRepository, err := repository.NewTodoRepository(client)
 
 	if err != nil {
 		panic(err)
 	}
 
-	adFindByIdUsecase := usecase.NewTodoFindByIdInteractor(adRepository)
-	ctrl := controller.NewTodoController(adFindByIdUsecase)
+	todoFindByIdUsecase := usecase.NewTodoFindByIdInteractor(todoRepository)
+	todoCreateUsecase := usecase.NewTodoCreateInteractor(todoRepository)
+	ctrl := controller.NewTodoController(todoFindByIdUsecase, todoCreateUsecase)
 
 	r := gin.Default()
 	r.GET("/todos/:id", func(ctx *gin.Context) {
 		ctrl.GetTodo(ctx)
+	})
+
+	r.POST("/todos", func(ctx *gin.Context) {
+		ctrl.PostTodo(ctx)
 	})
 
 	return r

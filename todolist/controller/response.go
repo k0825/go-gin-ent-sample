@@ -30,3 +30,15 @@ type todoFindApiResponse struct {
 	CreatedAt   jsonTime  `json:"created_at"`
 	UpdatedAt   jsonTime  `json:"updated_at"`
 }
+
+type todoCreateApiResponse struct {
+	Id          uuid.UUID `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	Tags        []string  `json:"tags"`
+	StartsAt    jsonTime  `json:"starts_at"`
+	EndsAt      jsonTime  `json:"ends_at"`
+	CreatedAt   jsonTime  `json:"created_at"`
+	UpdatedAt   jsonTime  `json:"updated_at"`
+}
