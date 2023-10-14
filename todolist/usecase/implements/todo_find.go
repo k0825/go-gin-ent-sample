@@ -2,8 +2,8 @@ package implements
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/cockroachdb/errors"
 	repositoryinterfaces "github.com/k0825/go-gin-ent-sample/repository/interfaces"
 	"github.com/k0825/go-gin-ent-sample/usecase/interfaces"
 )
@@ -20,7 +20,7 @@ func NewTodoFindByIdInteractor(tr repositoryinterfaces.TodoRepositoryInterface) 
 
 func (tfi *TodoFindByIdInteractor) Handle(ctx context.Context, request interfaces.TodoFindRequest) (*interfaces.TodoFindResponse, error) {
 	if tfi == nil {
-		return nil, fmt.Errorf("TodoFindByIdInteractor is nil.")
+		return nil, errors.New("TodoFindByIdInteractor is nil.")
 	}
 
 	todo, err := tfi.todoRepository.FindById(ctx, request.Id)

@@ -53,11 +53,10 @@ func TestTodoFindUseCase_Handle(t *testing.T) {
 	mockRepo.EXPECT().FindById(ctx, *todoId).Return(expectedTodo, nil)
 	tfi := NewTodoFindByIdInteractor(mockRepo)
 
-	request, err := interfaces.NewTodoFindRequest(id)
+	request := interfaces.NewTodoFindRequest(id)
+
+	response, err := tfi.Handle(ctx, *request)
 	assert.NoError(t, err)
 
-	todo, err := tfi.Handle(ctx, *request)
-	assert.NoError(t, err)
-
-	assert.Equal(t, todo.Id, id)
+	assert.Equal(t, response.Todo.GetId().Value(), id)
 }

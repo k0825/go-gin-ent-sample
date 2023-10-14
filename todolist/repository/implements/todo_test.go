@@ -2,7 +2,6 @@ package implements
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
@@ -17,98 +16,83 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func convertTestTodo(todo *ent.Todo, tags []*ent.Tag) (*domain.Todo, error) {
-	// 長さ指定して初期化
-	tagKeywords := make([]string, len(tags))
-
-	for i, tag := range tags {
-		tagKeywords[i] = tag.Keyword
-	}
-	mtm := models.NewTodoModel(
-		todo.ID,
-		todo.Title,
-		todo.Description,
-		*todo.Image,
-		tagKeywords,
-		todo.StartsAt,
-		todo.EndsAt,
-		todo.CreatedAt,
-		todo.UpdatedAt,
-	)
-
-	dt, err := mtm.ConvertToTodo()
-
-	return dt, err
-
-}
-
 func TestTodoRepository_GetTodo_Normal(t *testing.T) {
-	tests := []struct {
+	testCases := []struct {
 		name        string
-		title       string
-		description string
-		image       string
-		startsAt    time.Time
-		endsAt      time.Time
-		tagKeywords []string
+		prepareMock func(client *ent.Client) *domain.Todo
 	}{
 		{
 			"正常系 全ての値が揃っている",
-			"Todo 1",
-			"This is a sample todo.",
-			"https://example.com/image.png",
-			time.Now().In(time.Local),
-			time.Now().In(time.Local),
-			[]string{"sample", "test", "todo"},
+			func(client *ent.Client) *domain.Todo {
+				client.Schema.Create(context.Background(), migrate.WithGlobalUniqueID(true))
+
+				todo, _ := client.Todo.Create().
+					SetTitle("Todo 1").
+					SetDescription("This is a sample todo.").
+					SetImage("https://example.com/image.png").
+					SetStartsAt(time.Now().In(time.Local)).
+					SetEndsAt(time.Now().In(time.Local)).
+					Save(context.Background())
+
+				tagKeywords := []string{"sample", "test", "todo"}
+
+				tags, _ := client.Tag.MapCreateBulk(tagKeywords, func(c *ent.TagCreate, i int) {
+					c.SetKeyword(tagKeywords[i]).
+						SetTodoID(todo.ID)
+				}).Save(context.Background())
+
+				dt, _ := models.ConvertEntToTodo(todo, tags)
+
+				return dt
+			},
 		},
 		{
 			"正常系 画像がない",
-			"Todo 2",
-			"This is a sample todo.",
-			"",
-			time.Now().In(time.Local),
-			time.Now().In(time.Local),
-			[]string{},
+			func(client *ent.Client) *domain.Todo {
+				client.Schema.Create(context.Background(), migrate.WithGlobalUniqueID(true))
+
+				todo, _ := client.Todo.Create().
+					SetTitle("Todo 1").
+					SetDescription("This is a sample todo.").
+					SetImage("").
+					SetStartsAt(time.Now().In(time.Local)).
+					SetEndsAt(time.Now().In(time.Local)).
+					Save(context.Background())
+
+				tagKeywords := []string{"sample", "test", "todo"}
+
+				tags, _ := client.Tag.MapCreateBulk(tagKeywords, func(c *ent.TagCreate, i int) {
+					c.SetKeyword(tagKeywords[i]).
+						SetTodoID(todo.ID)
+				}).Save(context.Background())
+
+				dt, _ := models.ConvertEntToTodo(todo, tags)
+
+				return dt
+			},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
 			client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 			defer client.Close()
-			client.Schema.Create(context.Background(), migrate.WithGlobalUniqueID(true))
 
-			// Insert sample data into the database
-			todo, err := client.Todo.Create().
-				SetTitle(tt.name).
-				SetDescription(tt.description).
-				SetImage(tt.image).
-				SetStartsAt(tt.startsAt).
-				SetEndsAt(tt.endsAt).Save(context.Background())
-			require.NoError(t, err)
-
-			tags, err := client.Tag.MapCreateBulk(tt.tagKeywords, func(c *ent.TagCreate, i int) {
-				c.SetKeyword(tt.tagKeywords[i]).
-					SetTodoID(todo.ID)
-			}).Save(context.Background())
-
-			require.NoError(t, err)
+			expected := tc.prepareMock(client)
 
 			repo, err := NewTodoRepository(client)
 			require.NoError(t, err)
 
-			todoId := domain.NewTodoId(todo.ID)
+			todoId := domain.NewTodoId(expected.GetId().Value())
 			result, err := repo.FindById(context.Background(), *todoId)
-			require.NoError(t, err)
-
-			expected, err := convertTestTodo(todo, tags)
 			assert.NoError(t, err)
+
 			assert.Equal(t, expected.GetTitle(), result.GetTitle())
 			assert.Equal(t, expected.GetDescription(), result.GetDescription())
 			assert.Equal(t, expected.GetImage(), result.GetImage())
 			assert.Equal(t, expected.GetTags(), result.GetTags())
-			reflect.DeepEqual(expected.GetStartsAt(), result.GetStartsAt())
-			reflect.DeepEqual(expected.GetEndsAt(), result.GetEndsAt())
+			assert.Equal(t, expected.GetStartsAt().Format(time.RFC3339), result.GetStartsAt().Format(time.RFC3339))
+			assert.Equal(t, expected.GetEndsAt().Format(time.RFC3339), result.GetEndsAt().Format(time.RFC3339))
 		})
 	}
 }
@@ -134,7 +118,6 @@ func TestTodoRepository_GetTodo_NotFound(t *testing.T) {
 			require.NoError(t, err)
 
 			todoUuid := uuid.MustParse(tt.todoId)
-
 			todoId := domain.NewTodoId(todoUuid)
 			_, err = repo.FindById(context.Background(), *todoId)
 			require.Error(t, err)

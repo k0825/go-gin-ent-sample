@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/k0825/go-gin-ent-sample/models"
 )
 
@@ -61,34 +60,13 @@ func NewTodoCreateRequest(
 }
 
 type TodoCreateResponse struct {
-	Id          uuid.UUID
-	Title       string
-	Description string
-	Image       string
-	Tags        []string
-	StartsAt    time.Time
-	EndsAt      time.Time
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	Todo models.Todo
 }
 
 func NewTodoCreateResponse(todo models.Todo) *TodoCreateResponse {
-	todoTags := todo.GetTags()
-	tags := make([]string, len(todoTags))
-	for i, tag := range todoTags {
-		tags[i] = tag.Value()
-	}
 
 	return &TodoCreateResponse{
-		Id:          todo.GetId().Value(),
-		Title:       todo.GetTitle().Value(),
-		Description: todo.GetDescription().Value(),
-		Image:       todo.GetImage().Value(),
-		Tags:        tags,
-		StartsAt:    todo.GetStartsAt(),
-		EndsAt:      todo.GetEndsAt(),
-		CreatedAt:   todo.GetCreatedAt(),
-		UpdatedAt:   todo.GetUpdatedAt(),
+		Todo: todo,
 	}
 }
 

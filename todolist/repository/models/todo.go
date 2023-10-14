@@ -6,6 +6,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	"github.com/k0825/go-gin-ent-sample/domainerrors"
+	"github.com/k0825/go-gin-ent-sample/ent"
 	"github.com/k0825/go-gin-ent-sample/models"
 )
 
@@ -72,7 +73,7 @@ func (todoModel TodoModel) ConvertToTodo() (*models.Todo, error) {
 
 	if err != nil {
 		iErr := domainerrors.NewInvalidValueError("TodoTitle", todoModel.title)
-		wrapErr := errors.Wrap(err, iErr.Error())
+		wrapErr := errors.WithStack(iErr)
 
 		return nil, wrapErr
 	}
@@ -81,7 +82,7 @@ func (todoModel TodoModel) ConvertToTodo() (*models.Todo, error) {
 
 	if err != nil {
 		iErr := domainerrors.NewInvalidValueError("TodoDescription", todoModel.description)
-		wrapErr := errors.Wrap(err, iErr.Error())
+		wrapErr := errors.WithStack(iErr)
 
 		return nil, wrapErr
 	}
@@ -90,7 +91,7 @@ func (todoModel TodoModel) ConvertToTodo() (*models.Todo, error) {
 
 	if err != nil {
 		iErr := domainerrors.NewInvalidValueError("TodoImage", todoModel.image)
-		wrapErr := errors.Wrap(err, iErr.Error())
+		wrapErr := errors.WithStack(iErr)
 
 		return nil, wrapErr
 	}
@@ -101,7 +102,7 @@ func (todoModel TodoModel) ConvertToTodo() (*models.Todo, error) {
 
 		if err != nil {
 			iErr := domainerrors.NewInvalidValueError("TodoTag", todoModel.tags[i])
-			wrapErr := errors.Wrap(err, iErr.Error())
+			wrapErr := errors.WithStack(iErr)
 
 			return nil, wrapErr
 		}
@@ -112,6 +113,65 @@ func (todoModel TodoModel) ConvertToTodo() (*models.Todo, error) {
 	endsAt := todoModel.endsAt
 	createdAt := todoModel.createdAt
 	updatedAt := todoModel.updatedAt
+
+	todo, err := models.NewTodo(*id, *title, *description, *image, tags, startsAt, endsAt, createdAt, updatedAt)
+
+	if err != nil {
+		iErr := domainerrors.NewInvalidValueError("Todo", id.String())
+		wrapErr := errors.WithStack(iErr)
+		return nil, wrapErr
+	}
+
+	return todo, nil
+}
+
+func ConvertEntToTodo(entTodo *ent.Todo, entTags []*ent.Tag) (*models.Todo, error) {
+	id := models.NewTodoId(entTodo.ID)
+
+	title, err := models.NewTodoTitle(entTodo.Title)
+
+	if err != nil {
+		iErr := domainerrors.NewInvalidValueError("TodoTitle", entTodo.Title)
+		wrapErr := errors.WithStack(iErr)
+
+		return nil, wrapErr
+	}
+
+	description, err := models.NewTodoDescription(entTodo.Description)
+
+	if err != nil {
+		iErr := domainerrors.NewInvalidValueError("TodoDescription", entTodo.Description)
+		wrapErr := errors.WithStack(iErr)
+
+		return nil, wrapErr
+	}
+
+	image, err := models.NewTodoImage(*entTodo.Image)
+
+	if err != nil {
+		iErr := domainerrors.NewInvalidValueError("TodoImage", *entTodo.Image)
+		wrapErr := errors.WithStack(iErr)
+
+		return nil, wrapErr
+	}
+
+	tags := make([]models.TodoTag, len(entTags))
+	for i, entTag := range entTags {
+		tag, err := models.NewTodoTag(entTag.Keyword)
+
+		if err != nil {
+			iErr := domainerrors.NewInvalidValueError("TodoTag", entTag.Keyword)
+			wrapErr := errors.WithStack(iErr)
+
+			return nil, wrapErr
+		}
+
+		tags[i] = *tag
+	}
+	startsAt := entTodo.StartsAt
+	endsAt := entTodo.EndsAt
+	createdAt := entTodo.CreatedAt
+	updatedAt := entTodo.UpdatedAt
 
 	todo, err := models.NewTodo(*id, *title, *description, *image, tags, startsAt, endsAt, createdAt, updatedAt)
 

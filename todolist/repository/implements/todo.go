@@ -2,13 +2,12 @@ package implements
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/k0825/go-gin-ent-sample/domainerrors"
 	"github.com/k0825/go-gin-ent-sample/ent"
-	"github.com/k0825/go-gin-ent-sample/ent/tag"
+	"github.com/k0825/go-gin-ent-sample/ent/todo"
 	domain "github.com/k0825/go-gin-ent-sample/models"
 	"github.com/k0825/go-gin-ent-sample/repository/models"
 )
@@ -26,35 +25,23 @@ func (tr *TodoRepository) FindById(ctx context.Context, todoId domain.TodoId) (*
 		return nil, errors.New("TodoRepositoryInterface pointer is nil")
 	}
 
-	todo, err := tr.client.Todo.Get(ctx, todoId.Value())
+	todo, err := tr.client.Todo.Query().Where(todo.ID(todoId.Value())).WithTags().Only(ctx)
 
 	if err != nil {
 		nfErr := domainerrors.NewNotFoundError("Todo", todoId.String())
-		wrapErr := errors.Wrap(nfErr, err.Error())
+		wrapErr := errors.WithStack(nfErr)
 		return nil, wrapErr
 	}
 
-	tags, err := tr.client.Tag.Query().Where(tag.TodoID(todoId.Value())).Select(tag.FieldKeyword).Strings(ctx)
+	tags := todo.Edges.Tags
 
-	if err != nil {
+	if tags == nil {
 		nfErr := domainerrors.NewNotFoundError("Tag", todoId.String())
-		wrapErr := errors.Wrap(nfErr, err.Error())
+		wrapErr := errors.WithStack(nfErr)
 		return nil, wrapErr
 	}
 
-	mtm := models.NewTodoModel(
-		todo.ID,
-		todo.Title,
-		todo.Description,
-		*todo.Image,
-		tags,
-		todo.StartsAt,
-		todo.EndsAt,
-		todo.CreatedAt,
-		todo.UpdatedAt,
-	)
-
-	dt, err := mtm.ConvertToTodo()
+	dt, err := models.ConvertEntToTodo(todo, tags)
 
 	if err != nil {
 		return nil, err
@@ -70,8 +57,9 @@ func (tr *TodoRepository) Create(ctx context.Context,
 	tags []domain.TodoTag,
 	startsAt time.Time,
 	endsAt time.Time) (*domain.Todo, error) {
+
 	if tr == nil {
-		return nil, fmt.Errorf("TodoRepositoryInterface pointer is nil")
+		return nil, errors.New("TodoRepositoryInterface pointer is nil")
 	}
 
 	tx, err := tr.client.Tx(ctx)
@@ -131,7 +119,7 @@ func (tr *TodoRepository) Create(ctx context.Context,
 
 func rollback(tx *ent.Tx, err error) error {
 	if rerr := tx.Rollback(); rerr != nil {
-		err = fmt.Errorf("%w: %v", err, rerr)
+		err = errors.Wrap(err, rerr.Error())
 	}
 	return err
 }

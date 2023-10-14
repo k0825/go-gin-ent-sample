@@ -38,13 +38,7 @@ func (tdc *TodoController) GetTodo(ctx *gin.Context) {
 		ctx.JSON(400, gin.H{"message": "UUID変換中にエラーが発生しました。IDの形式が正しくありません"})
 	}
 
-	request, err := usecaseinterfaces.NewTodoFindRequest(uuid)
-
-	if err != nil {
-		ctx.JSON(500, gin.H{"message": "リクエスト生成中にエラーが発生しました"})
-		return
-	}
-
+	request := usecaseinterfaces.NewTodoFindRequest(uuid)
 	response, err := tdc.todoFindByIdUsecase.Handle(ctx, *request)
 
 	if err != nil {
@@ -57,16 +51,22 @@ func (tdc *TodoController) GetTodo(ctx *gin.Context) {
 		return
 	}
 
+	TodoTags := response.Todo.GetTags()
+	resTags := make([]string, len(TodoTags))
+	for i, t := range TodoTags {
+		resTags[i] = t.Value()
+	}
+
 	resJson := todoFindApiResponse{
-		Id:          response.Id,
-		Title:       response.Title,
-		Description: response.Description,
-		Image:       response.Image,
-		Tags:        response.Tags,
-		StartsAt:    jsonTime{response.StartsAt},
-		EndsAt:      jsonTime{response.EndsAt},
-		CreatedAt:   jsonTime{response.CreatedAt},
-		UpdatedAt:   jsonTime{response.UpdatedAt},
+		Id:          response.Todo.GetId().Value(),
+		Title:       response.Todo.GetTitle().Value(),
+		Description: response.Todo.GetDescription().Value(),
+		Image:       response.Todo.GetImage().Value(),
+		Tags:        resTags,
+		StartsAt:    jsonTime{response.Todo.GetStartsAt()},
+		EndsAt:      jsonTime{response.Todo.GetEndsAt()},
+		CreatedAt:   jsonTime{response.Todo.GetCreatedAt()},
+		UpdatedAt:   jsonTime{response.Todo.GetUpdatedAt()},
 	}
 
 	ctx.JSON(200, resJson)
@@ -103,16 +103,22 @@ func (tdc *TodoController) PostTodo(ctx *gin.Context) {
 		return
 	}
 
+	TodoTags := response.Todo.GetTags()
+	resTags := make([]string, len(TodoTags))
+	for i, t := range TodoTags {
+		resTags[i] = t.Value()
+	}
+
 	resJson := todoCreateApiResponse{
-		Id:          response.Id,
-		Title:       response.Title,
-		Description: response.Description,
-		Image:       response.Image,
-		Tags:        response.Tags,
-		StartsAt:    jsonTime{response.StartsAt},
-		EndsAt:      jsonTime{response.EndsAt},
-		CreatedAt:   jsonTime{response.CreatedAt},
-		UpdatedAt:   jsonTime{response.UpdatedAt},
+		Id:          response.Todo.GetId().Value(),
+		Title:       response.Todo.GetTitle().Value(),
+		Description: response.Todo.GetDescription().Value(),
+		Image:       response.Todo.GetImage().Value(),
+		Tags:        resTags,
+		StartsAt:    jsonTime{response.Todo.GetStartsAt()},
+		EndsAt:      jsonTime{response.Todo.GetEndsAt()},
+		CreatedAt:   jsonTime{response.Todo.GetCreatedAt()},
+		UpdatedAt:   jsonTime{response.Todo.GetUpdatedAt()},
 	}
 
 	ctx.JSON(200, resJson)
