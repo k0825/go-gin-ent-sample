@@ -23,7 +23,7 @@ func NewTodoRepository(client *ent.Client) (*TodoRepository, error) {
 
 func (tr *TodoRepository) FindById(ctx context.Context, todoId domain.TodoId) (*domain.Todo, error) {
 	if tr == nil {
-		return nil, fmt.Errorf("TodoRepositoryInterface pointer is nil")
+		return nil, errors.New("TodoRepositoryInterface pointer is nil")
 	}
 
 	todo, err := tr.client.Todo.Get(ctx, todoId.Value())

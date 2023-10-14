@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -12,8 +11,8 @@ import (
 )
 
 type TodoControllerInterface interface {
-	GetTodo(ctx *gin.Context) error
-	PostTodo(ctx *gin.Context) error
+	GetTodo(ctx *gin.Context)
+	PostTodo(ctx *gin.Context)
 }
 
 type TodoController struct {
@@ -29,38 +28,33 @@ func NewTodoController(todoFindByIdUsecase usecaseinterfaces.TodoFindUseCaseInte
 	}
 }
 
-func (tdc *TodoController) GetTodo(ctx *gin.Context) error {
+func (tdc *TodoController) GetTodo(ctx *gin.Context) {
 	id := ctx.Param("id")
 
 	// idをuuidに変換する
 	uuid, err := uuid.Parse(id)
 
 	if err != nil {
-		if errors.HasType(err, &domainerrors.InvalidValueError{}) {
-			ctx.JSON(400, gin.H{"message": "指定されたIDの形式が正しくありません"})
-		} else {
-			ctx.JSON(500, gin.H{"message": "UUID変換中にエラーが発生しました"})
-		}
-		return err
+		ctx.JSON(400, gin.H{"message": "UUID変換中にエラーが発生しました。IDの形式が正しくありません"})
 	}
 
 	request, err := usecaseinterfaces.NewTodoFindRequest(uuid)
 
 	if err != nil {
 		ctx.JSON(500, gin.H{"message": "リクエスト生成中にエラーが発生しました"})
-		return err
+		return
 	}
 
 	response, err := tdc.todoFindByIdUsecase.Handle(ctx, *request)
 
 	if err != nil {
-		if errors.HasType(err, &domainerrors.NotFoundError{}) {
+		var nfErr *domainerrors.NotFoundError
+		if errors.As(err, &nfErr) {
 			ctx.JSON(404, gin.H{"message": "指定されたIDの広告は存在しません"})
 		} else {
 			ctx.JSON(500, gin.H{"message": "実行中にエラーが発生しました"})
-			fmt.Println(err)
 		}
-		return err
+		return
 	}
 
 	resJson := todoFindApiResponse{
@@ -76,11 +70,9 @@ func (tdc *TodoController) GetTodo(ctx *gin.Context) error {
 	}
 
 	ctx.JSON(200, resJson)
-
-	return nil
 }
 
-func (tdc *TodoController) PostTodo(ctx *gin.Context) error {
+func (tdc *TodoController) PostTodo(ctx *gin.Context) {
 	title := ctx.PostForm("title")
 	description := ctx.PostForm("description")
 	image := ctx.PostForm("image")
@@ -89,27 +81,26 @@ func (tdc *TodoController) PostTodo(ctx *gin.Context) error {
 	startsAt, err := string2time(ctx.PostForm("starts_at"))
 	if err != nil {
 		ctx.JSON(400, gin.H{"message": "starts_atの形式が正しくありません"})
-		return err
+		return
 	}
 
 	endsAt, err := string2time(ctx.PostForm("ends_at"))
 	if err != nil {
 		ctx.JSON(400, gin.H{"message": "ends_atの形式が正しくありません"})
-		return err
+		return
 	}
 
 	request, err := usecaseinterfaces.NewTodoCreateRequest(title, description, image, tags, startsAt, endsAt)
 
 	if err != nil {
 		ctx.JSON(500, gin.H{"message": "リクエスト生成中にエラーが発生しました"})
-		return err
+		return
 	}
 
 	response, err := tdc.todoCreateUseCase.Handle(ctx, *request)
 	if err != nil {
 		ctx.JSON(500, gin.H{"message": "実行中にエラーが発生しました"})
-		fmt.Println(err)
-		return err
+		return
 	}
 
 	resJson := todoCreateApiResponse{
@@ -125,8 +116,6 @@ func (tdc *TodoController) PostTodo(ctx *gin.Context) error {
 	}
 
 	ctx.JSON(200, resJson)
-
-	return nil
 }
 
 func string2time(str string) (time.Time, error) {

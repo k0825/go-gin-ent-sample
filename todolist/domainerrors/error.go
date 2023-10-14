@@ -6,7 +6,7 @@ type DomainValueError struct {
 	message string
 }
 
-func (e DomainValueError) Error() string {
+func (e *DomainValueError) Error() string {
 	return e.message
 }
 
@@ -19,7 +19,7 @@ type InvalidValueError struct {
 	value string
 }
 
-func (e InvalidValueError) Error() string {
+func (e *InvalidValueError) Error() string {
 	return fmt.Sprintf("%s is invalid value: %s", e.key, e.value)
 }
 
@@ -32,7 +32,7 @@ type NotFoundError struct {
 	Id        string
 }
 
-func (e NotFoundError) Error() string {
+func (e *NotFoundError) Error() string {
 	return fmt.Sprintf("%s %s is does not exist", e.FieldName, e.Id)
 }
 
