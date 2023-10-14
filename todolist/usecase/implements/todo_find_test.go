@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/k0825/go-gin-ent-sample/models"
@@ -14,49 +15,90 @@ import (
 )
 
 func TestTodoFindUseCase_Handle(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	testCases := []struct {
+		name        string
+		wantErr     bool
+		prepareMock func(*mock_interfaces.MockTodoRepositoryInterface, uuid.UUID) *TodoFindByIdInteractor
+	}{
+		{
+			"正常系 全ての値が揃っている",
+			false,
+			func(m *mock_interfaces.MockTodoRepositoryInterface, id uuid.UUID) *TodoFindByIdInteractor {
+				todoId := models.NewTodoId(id)
+				todoTitle, _ := models.NewTodoTitle("Todo 1")
+				todoDescription, _ := models.NewTodoDescription("This is a sample todo.")
+				todoImage, _ := models.NewTodoImage("https://example.com/image.png")
 
-	id := uuid.New()
-	todoId := models.NewTodoId(id)
-	todoTitle, _ := models.NewTodoTitle("Todo 1")
-	todoDescription, _ := models.NewTodoDescription("This is a sample todo.")
-	todoImage, _ := models.NewTodoImage("https://example.com/image.png")
+				tags := []string{"tag1", "tag2", "tag3"}
+				todoTags := make([]models.TodoTag, len(tags))
+				for i, tag := range tags {
+					todoTag, _ := models.NewTodoTag(tag)
+					todoTags[i] = *todoTag
+				}
 
-	tags := []string{"tag1", "tag2", "tag3"}
-	todoTags := make([]models.TodoTag, len(tags))
-	for i, tag := range tags {
-		todoTag, _ := models.NewTodoTag(tag)
-		todoTags[i] = *todoTag
+				todoStartsAt := time.Now().In(time.Local)
+				todoEndsAt := time.Now().In(time.Local)
+				todoCreatedAt := time.Now().In(time.Local)
+				todoUpdatedAt := time.Now().In(time.Local)
+
+				expectedTodo, _ := models.NewTodo(
+					*todoId,
+					*todoTitle,
+					*todoDescription,
+					*todoImage,
+					todoTags,
+					todoStartsAt,
+					todoEndsAt,
+					todoCreatedAt,
+					todoUpdatedAt,
+				)
+
+				ctx := context.Background()
+
+				m.EXPECT().FindById(ctx, *todoId).Return(expectedTodo, nil)
+				tfi := NewTodoFindByIdInteractor(m)
+				return tfi
+			},
+		},
+		{
+			"異常系 なんらかのエラーが発生した場合、エラーを返す",
+			true,
+			func(m *mock_interfaces.MockTodoRepositoryInterface, id uuid.UUID) *TodoFindByIdInteractor {
+				todoId := models.NewTodoId(id)
+
+				ctx := context.Background()
+
+				err := errors.New("some error")
+
+				m.EXPECT().FindById(ctx, *todoId).Return(nil, err)
+				tfi := NewTodoFindByIdInteractor(m)
+				return tfi
+			},
+		},
 	}
 
-	todoStartsAt := time.Now().In(time.Local)
-	todoEndsAt := time.Now().In(time.Local)
-	todoCreatedAt := time.Now().In(time.Local)
-	todoUpdatedAt := time.Now().In(time.Local)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-	expectedTodo, err := models.NewTodo(
-		*todoId,
-		*todoTitle,
-		*todoDescription,
-		*todoImage,
-		todoTags,
-		todoStartsAt,
-		todoEndsAt,
-		todoCreatedAt,
-		todoUpdatedAt,
-	)
+			id := uuid.New()
 
-	ctx := context.Background()
+			m := mock_interfaces.NewMockTodoRepositoryInterface(ctrl)
 
-	mockRepo := mock_interfaces.NewMockTodoRepositoryInterface(ctrl)
-	mockRepo.EXPECT().FindById(ctx, *todoId).Return(expectedTodo, nil)
-	tfi := NewTodoFindByIdInteractor(mockRepo)
+			tfi := tc.prepareMock(m, id)
 
-	request := interfaces.NewTodoFindRequest(id)
+			request := interfaces.NewTodoFindRequest(id)
 
-	response, err := tfi.Handle(ctx, *request)
-	assert.NoError(t, err)
+			response, err := tfi.Handle(context.Background(), *request)
 
-	assert.Equal(t, response.Todo.GetId().Value(), id)
+			if !tc.wantErr {
+				assert.NoError(t, err)
+				assert.Equal(t, response.Todo.GetId().Value(), id)
+			} else {
+				assert.Error(t, err)
+				assert.Nil(t, response)
+			}
+		})
+	}
 }
