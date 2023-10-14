@@ -17,7 +17,7 @@ import (
 
 // Injectors from wire.go:
 
-func Init() (*controller.TodoController, error) {
+func Init() (*Container, error) {
 	configConfig := config.NewConfig()
 	client, err := datasource.NewConnection(configConfig)
 	if err != nil {
@@ -30,7 +30,8 @@ func Init() (*controller.TodoController, error) {
 	todoFindByIdInteractor := implements2.NewTodoFindByIdInteractor(todoRepository)
 	todoCreateInteractor := implements2.NewTodoCreateInteractor(todoRepository)
 	todoController := controller.NewTodoController(todoFindByIdInteractor, todoCreateInteractor)
-	return todoController, nil
+	container := newContainer(todoController)
+	return container, nil
 }
 
 // wire.go:
@@ -42,3 +43,13 @@ var usecaseSet = wire.NewSet(implements2.NewTodoFindByIdInteractor, implements2.
 var controllerSet = wire.NewSet(controller.NewTodoController)
 
 var configSet = wire.NewSet(config.NewConfig)
+
+type Container struct {
+	TodoController controller.TodoControllerInterface
+}
+
+func newContainer(controller2 controller.TodoControllerInterface) *Container {
+	return &Container{
+		TodoController: controller2,
+	}
+}
