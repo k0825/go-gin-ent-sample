@@ -81,32 +81,14 @@ func (tr *TodoRepository) Create(ctx context.Context,
 	}
 
 	tagEnt, err := tx.Tag.MapCreateBulk(tags, func(c *ent.TagCreate, i int) {
-		c.SetKeyword(tags[i].Value()).
-			SetTodoID(todoEnt.ID)
+		c.SetKeyword(tags[i].Value()).SetTodo(todoEnt)
 	}).Save(ctx)
 
 	if err != nil {
 		return nil, rollback(tx, err)
 	}
 
-	tagKeywords := make([]string, len(tagEnt))
-	for i, tag := range tagEnt {
-		tagKeywords[i] = tag.Keyword
-	}
-
-	mtm := models.NewTodoModel(
-		todoEnt.ID,
-		todoEnt.Title,
-		todoEnt.Description,
-		*todoEnt.Image,
-		tagKeywords,
-		todoEnt.StartsAt,
-		todoEnt.EndsAt,
-		todoEnt.CreatedAt,
-		todoEnt.UpdatedAt,
-	)
-
-	dt, err := mtm.ConvertToTodo()
+	dt, err := models.ConvertEntToTodo(todoEnt, tagEnt)
 
 	if err != nil {
 		return nil, err

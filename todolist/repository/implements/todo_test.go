@@ -98,7 +98,7 @@ func TestTodoRepository_GetTodo_Normal(t *testing.T) {
 }
 
 func TestTodoRepository_GetTodo_NotFound(t *testing.T) {
-	tests := []struct {
+	testCases := []struct {
 		name   string
 		todoId string
 	}{
@@ -108,8 +108,8 @@ func TestTodoRepository_GetTodo_NotFound(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
 			client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 			defer client.Close()
 			client.Schema.Create(context.Background(), migrate.WithGlobalUniqueID(true))
@@ -117,10 +117,74 @@ func TestTodoRepository_GetTodo_NotFound(t *testing.T) {
 			repo, err := NewTodoRepository(client)
 			require.NoError(t, err)
 
-			todoUuid := uuid.MustParse(tt.todoId)
+			todoUuid := uuid.MustParse(tc.todoId)
 			todoId := domain.NewTodoId(todoUuid)
 			_, err = repo.FindById(context.Background(), *todoId)
 			require.Error(t, err)
+		})
+	}
+}
+
+func TestTodoRepository_Create_Normal(t *testing.T) {
+	testCases := []struct {
+		name        string
+		title       string
+		description string
+		image       string
+		tags        []string
+		startsAt    time.Time
+		endsAt      time.Time
+	}{
+		{
+			"正常系 全ての値が揃っている",
+			"Todo 1",
+			"This is a sample todo.",
+			"https://example.com/image.png",
+			[]string{"sample", "test", "todo"},
+			time.Now().In(time.Local),
+			time.Now().In(time.Local),
+		},
+		{
+			"正常系 画像がない",
+			"Todo 1",
+			"This is a sample todo.",
+			"",
+			[]string{"sample", "test", "todo"},
+			time.Now().In(time.Local),
+			time.Now().In(time.Local),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+			defer client.Close()
+
+			repo, err := NewTodoRepository(client)
+			require.NoError(t, err)
+
+			todoTitle, _ := domain.NewTodoTitle(tc.title)
+			todoDescription, _ := domain.NewTodoDescription(tc.description)
+			todoImage, _ := domain.NewTodoImage(tc.image)
+
+			todoTags := make([]domain.TodoTag, len(tc.tags))
+			for i, tag := range tc.tags {
+				todoTag, _ := domain.NewTodoTag(tag)
+				todoTags[i] = *todoTag
+			}
+
+			todoStartsAt := tc.startsAt
+			todoEndsAt := tc.endsAt
+
+			result, err := repo.Create(context.Background(), *todoTitle, *todoDescription, *todoImage, todoTags, todoStartsAt, todoEndsAt)
+			require.NoError(t, err)
+
+			assert.Equal(t, *todoTitle, result.GetTitle())
+			assert.Equal(t, *todoDescription, result.GetDescription())
+			assert.Equal(t, *todoImage, result.GetImage())
+			assert.Equal(t, todoTags, result.GetTags())
+			assert.Equal(t, todoStartsAt.Format(time.RFC3339), result.GetStartsAt().Format(time.RFC3339))
+			assert.Equal(t, todoEndsAt.Format(time.RFC3339), result.GetEndsAt().Format(time.RFC3339))
 		})
 	}
 }
