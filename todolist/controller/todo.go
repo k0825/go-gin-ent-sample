@@ -28,6 +28,43 @@ func NewTodoController(todoFindByIdUsecase usecaseinterfaces.TodoFindUseCaseInte
 	}
 }
 
+type jsonTime struct {
+	time.Time
+}
+
+// 出力形式はRFC3339で指定
+func (j jsonTime) format() string {
+	return j.Format(time.RFC3339)
+}
+
+func (j jsonTime) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + j.format() + `"`), nil
+}
+
+type todoFindApiResponse struct {
+	Id          uuid.UUID `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	Tags        []string  `json:"tags"`
+	StartsAt    jsonTime  `json:"starts_at"`
+	EndsAt      jsonTime  `json:"ends_at"`
+	CreatedAt   jsonTime  `json:"created_at"`
+	UpdatedAt   jsonTime  `json:"updated_at"`
+}
+
+type todoCreateApiResponse struct {
+	Id          uuid.UUID `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	Tags        []string  `json:"tags"`
+	StartsAt    jsonTime  `json:"starts_at"`
+	EndsAt      jsonTime  `json:"ends_at"`
+	CreatedAt   jsonTime  `json:"created_at"`
+	UpdatedAt   jsonTime  `json:"updated_at"`
+}
+
 func (tdc *TodoController) GetTodo(ctx *gin.Context) {
 	id := ctx.Param("id")
 
@@ -126,5 +163,9 @@ func (tdc *TodoController) PostTodo(ctx *gin.Context) {
 
 func string2time(str string) (time.Time, error) {
 	layout := "2006-01-02T15:04:05Z07:00"
-	return time.Parse(layout, str)
+	t, err := time.Parse(layout, str)
+	if err != nil {
+		return time.Time{}, errors.New("time parse error")
+	}
+	return t, err
 }
