@@ -81,6 +81,15 @@ type todoCreateApiResponse struct {
 	UpdatedAt   jsonTime  `json:"updated_at"`
 }
 
+type todoCreateApiRequest struct {
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Image       string   `json:"image"`
+	Tags        []string `json:"tags"`
+	StartsAt    jsonTime `json:"starts_at"`
+	EndsAt      jsonTime `json:"ends_at"`
+}
+
 func (tdc *TodoController) GetTodo(ctx *gin.Context) {
 	id := ctx.Param("id")
 
@@ -184,24 +193,13 @@ func (tdc *TodoController) GetAllTodo(ctx *gin.Context) {
 }
 
 func (tdc *TodoController) PostTodo(ctx *gin.Context) {
-	title := ctx.PostForm("title")
-	description := ctx.PostForm("description")
-	image := ctx.PostForm("image")
-	tags := ctx.PostFormArray("tags")
-
-	startsAt, err := string2time(ctx.PostForm("starts_at"))
-	if err != nil {
-		ctx.JSON(400, gin.H{"message": "starts_atの形式が正しくありません"})
+	var req todoCreateApiRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.JSON(400, gin.H{"message": "リクエストの形式が正しくありません"})
 		return
 	}
 
-	endsAt, err := string2time(ctx.PostForm("ends_at"))
-	if err != nil {
-		ctx.JSON(400, gin.H{"message": "ends_atの形式が正しくありません"})
-		return
-	}
-
-	request, err := usecaseinterfaces.NewTodoCreateRequest(title, description, image, tags, startsAt, endsAt)
+	request, err := usecaseinterfaces.NewTodoCreateRequest(req.Title, req.Description, req.Image, req.Tags, req.StartsAt.Time, req.EndsAt.Time)
 
 	if err != nil {
 		ctx.JSON(500, gin.H{"message": "リクエスト生成中にエラーが発生しました"})
@@ -259,13 +257,4 @@ func (tdc *TodoController) DeleteTodo(ctx *gin.Context) {
 	}
 
 	ctx.JSON(204, nil)
-}
-
-func string2time(str string) (time.Time, error) {
-	layout := "2006-01-02T15:04:05Z07:00"
-	t, err := time.Parse(layout, str)
-	if err != nil {
-		return time.Time{}, errors.New("time parse error")
-	}
-	return t, err
 }
