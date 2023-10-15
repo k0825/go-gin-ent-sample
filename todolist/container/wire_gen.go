@@ -30,7 +30,8 @@ func Init() (*Container, error) {
 	todoFindByIdInteractor := implements2.NewTodoFindByIdInteractor(todoRepository)
 	todoFindAllInteractor := implements2.NewTodoFindAllInteractor(todoRepository)
 	todoCreateInteractor := implements2.NewTodoCreateInteractor(todoRepository)
-	todoController := controller.NewTodoController(todoFindByIdInteractor, todoFindAllInteractor, todoCreateInteractor)
+	todoDeleteInteractor := implements2.NewTodoDeleteInteractor(todoRepository)
+	todoController := controller.NewTodoController(todoFindByIdInteractor, todoFindAllInteractor, todoCreateInteractor, todoDeleteInteractor)
 	container := newContainer(todoController)
 	return container, nil
 }
@@ -39,7 +40,7 @@ func Init() (*Container, error) {
 
 var repositorySet = wire.NewSet(implements.NewTodoRepository)
 
-var usecaseSet = wire.NewSet(implements2.NewTodoFindByIdInteractor, implements2.NewTodoFindAllInteractor, implements2.NewTodoCreateInteractor)
+var usecaseSet = wire.NewSet(implements2.NewTodoFindByIdInteractor, implements2.NewTodoFindAllInteractor, implements2.NewTodoCreateInteractor, implements2.NewTodoDeleteInteractor)
 
 var controllerSet = wire.NewSet(controller.NewTodoController)
 

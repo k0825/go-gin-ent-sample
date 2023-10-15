@@ -17,7 +17,7 @@ func setupRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/todos", c.TodoController.GetAllTodo)
 	r.GET("/todos/:id", c.TodoController.GetTodo)
-
+	r.DELETE("/todos/:id", c.TodoController.DeleteTodo)
 	r.POST("/todos", c.TodoController.PostTodo)
 
 	return r

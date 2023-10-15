@@ -17,4 +17,5 @@ type TodoRepositoryInterface interface {
 		[]models.TodoTag,
 		time.Time,
 		time.Time) (*models.Todo, error)
+	Delete(context.Context, models.TodoId) error
 }

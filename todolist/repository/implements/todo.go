@@ -137,3 +137,19 @@ func rollback(tx *ent.Tx, err error) error {
 	}
 	return err
 }
+
+func (tr *TodoRepository) Delete(ctx context.Context, todoId domain.TodoId) error {
+	if tr == nil {
+		return errors.New("TodoRepositoryInterface pointer is nil")
+	}
+
+	_, err := tr.client.Todo.Delete().Where(todo.ID(todoId.Value())).Exec(ctx)
+
+	if err != nil {
+		nfErr := domainerrors.NewNotFoundError("Todo", todoId.String())
+		wrapErr := errors.WithStack(nfErr)
+		return wrapErr
+	}
+
+	return nil
+}

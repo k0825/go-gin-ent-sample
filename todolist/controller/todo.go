@@ -15,22 +15,26 @@ type TodoControllerInterface interface {
 	GetTodo(ctx *gin.Context)
 	GetAllTodo(ctx *gin.Context)
 	PostTodo(ctx *gin.Context)
+	DeleteTodo(ctx *gin.Context)
 }
 
 type TodoController struct {
 	todoFindByIdUsecase usecaseinterfaces.TodoFindUseCaseInterface
 	todoFindAllUsecase  usecaseinterfaces.TodoFindAllUseCaseInterface
 	todoCreateUseCase   usecaseinterfaces.TodoCreateUseCaseInterface
+	todoDeleteUseCase   usecaseinterfaces.TodoDeleteUseCaseInterface
 }
 
 func NewTodoController(
 	todoFindByIdUsecase usecaseinterfaces.TodoFindUseCaseInterface,
 	todoFindAllUsecase usecaseinterfaces.TodoFindAllUseCaseInterface,
-	todoCreateUsecase usecaseinterfaces.TodoCreateUseCaseInterface) *TodoController {
+	todoCreateUsecase usecaseinterfaces.TodoCreateUseCaseInterface,
+	todoDeleteUsecase usecaseinterfaces.TodoDeleteUseCaseInterface) *TodoController {
 	return &TodoController{
 		todoFindByIdUsecase: todoFindByIdUsecase,
 		todoFindAllUsecase:  todoFindAllUsecase,
 		todoCreateUseCase:   todoCreateUsecase,
+		todoDeleteUseCase:   todoDeleteUsecase,
 	}
 }
 
@@ -229,6 +233,32 @@ func (tdc *TodoController) PostTodo(ctx *gin.Context) {
 	}
 
 	ctx.JSON(200, resJson)
+}
+
+func (tdc *TodoController) DeleteTodo(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	// idをuuidに変換する
+	uuid, err := uuid.Parse(id)
+
+	if err != nil {
+		ctx.JSON(400, gin.H{"message": "UUID変換中にエラーが発生しました。IDの形式が正しくありません"})
+	}
+
+	request := usecaseinterfaces.NewTodoDeleteRequest(uuid)
+	err = tdc.todoDeleteUseCase.Handle(ctx, *request)
+
+	if err != nil {
+		var nfErr *domainerrors.NotFoundError
+		if errors.As(err, &nfErr) {
+			ctx.JSON(404, gin.H{"message": "指定されたIDの広告は存在しません"})
+		} else {
+			ctx.JSON(500, gin.H{"message": "実行中にエラーが発生しました"})
+		}
+		return
+	}
+
+	ctx.JSON(204, nil)
 }
 
 func string2time(str string) (time.Time, error) {
