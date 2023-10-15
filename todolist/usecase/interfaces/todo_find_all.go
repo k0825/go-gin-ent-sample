@@ -19,15 +19,15 @@ func NewTodoFindAllRequest(page int, number int) *TodoFindAllRequest {
 }
 
 type TodoFindAllResponse struct {
-	Todos []models.Todo
+	Todos []*models.Todo
 }
 
-func NewTodoFindAllResponse(todos []models.Todo) *TodoFindAllResponse {
+func NewTodoFindAllResponse(todos []*models.Todo) *TodoFindAllResponse {
 	return &TodoFindAllResponse{
 		Todos: todos,
 	}
 }
 
 type TodoFindAllUseCaseInterface interface {
-	Handle(context.Context, *TodoFindAllRequest) (*TodoFindAllResponse, error)
+	Handle(context.Context, TodoFindAllRequest) (*TodoFindAllResponse, error)
 }
