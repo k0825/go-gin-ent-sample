@@ -12,18 +12,23 @@ import (
 
 type TodoControllerInterface interface {
 	GetTodo(ctx *gin.Context)
+	GetAllTodo(ctx *gin.Context)
 	PostTodo(ctx *gin.Context)
 }
 
 type TodoController struct {
 	todoFindByIdUsecase usecaseinterfaces.TodoFindUseCaseInterface
+	todoFindAllUsecase  usecaseinterfaces.TodoFindAllUseCaseInterface
 	todoCreateUseCase   usecaseinterfaces.TodoCreateUseCaseInterface
 }
 
-func NewTodoController(todoFindByIdUsecase usecaseinterfaces.TodoFindUseCaseInterface,
+func NewTodoController(
+	todoFindByIdUsecase usecaseinterfaces.TodoFindUseCaseInterface,
+	todoFindAllUsecase usecaseinterfaces.TodoFindAllUseCaseInterface,
 	todoCreateUsecase usecaseinterfaces.TodoCreateUseCaseInterface) *TodoController {
 	return &TodoController{
 		todoFindByIdUsecase: todoFindByIdUsecase,
+		todoFindAllUsecase:  todoFindAllUsecase,
 		todoCreateUseCase:   todoCreateUsecase,
 	}
 }

@@ -9,6 +9,7 @@ import (
 
 type TodoRepositoryInterface interface {
 	FindById(context.Context, models.TodoId) (*models.Todo, error)
+	FindAll(context.Context, int, int) ([]*models.Todo, error)
 	Create(context.Context,
 		models.TodoTitle,
 		models.TodoDescription,
