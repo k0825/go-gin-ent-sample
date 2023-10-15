@@ -7,6 +7,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/k0825/go-gin-ent-sample/domainerrors"
 	"github.com/k0825/go-gin-ent-sample/ent"
+	"github.com/k0825/go-gin-ent-sample/ent/tag"
 	"github.com/k0825/go-gin-ent-sample/ent/todo"
 	domain "github.com/k0825/go-gin-ent-sample/models"
 	"github.com/k0825/go-gin-ent-sample/repository/models"
@@ -143,12 +144,27 @@ func (tr *TodoRepository) Delete(ctx context.Context, todoId domain.TodoId) erro
 		return errors.New("TodoRepositoryInterface pointer is nil")
 	}
 
-	_, err := tr.client.Todo.Delete().Where(todo.ID(todoId.Value())).Exec(ctx)
+	tx, err := tr.client.Tx(ctx)
 
 	if err != nil {
-		nfErr := domainerrors.NewNotFoundError("Todo", todoId.String())
-		wrapErr := errors.WithStack(nfErr)
-		return wrapErr
+		return err
+	}
+
+	_, err = tx.Tag.Delete().Where(tag.HasTodoWith(todo.ID(todoId.Value()))).Exec(ctx)
+	if err != nil {
+		return rollback(tx, err)
+	}
+
+	_, err = tx.Todo.Delete().Where(todo.ID(todoId.Value())).Exec(ctx)
+
+	if err != nil {
+		return rollback(tx, err)
+	}
+
+	err = tx.Commit()
+
+	if err != nil {
+		return err
 	}
 
 	return nil
