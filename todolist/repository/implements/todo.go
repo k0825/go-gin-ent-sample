@@ -50,6 +50,38 @@ func (tr *TodoRepository) FindById(ctx context.Context, todoId domain.TodoId) (*
 	return dt, nil
 }
 
+func (tr *TodoRepository) FindAll(ctx context.Context, page int, number int) ([]*domain.Todo, error) {
+	if tr == nil {
+		return nil, errors.New("TodoRepositoryInterface pointer is nil")
+	}
+
+	todos, err := tr.client.Todo.Query().WithTags().Offset((page - 1) * number).Limit(number).All(ctx)
+
+	if err != nil {
+		nfErr := domainerrors.NewNotFoundError("Todo", "all")
+		wrapErr := errors.WithStack(nfErr)
+		return nil, wrapErr
+	}
+
+	dts := make([]*domain.Todo, len(todos))
+	for i, todo := range todos {
+		tags := todo.Edges.Tags
+		if tags == nil {
+			nfErr := domainerrors.NewNotFoundError("Tag", todo.ID.String())
+			wrapErr := errors.WithStack(nfErr)
+			return nil, wrapErr
+		}
+
+		dt, err := models.ConvertEntToTodo(todo, tags)
+		if err != nil {
+			return nil, err
+		}
+
+		dts[i] = dt
+	}
+	return dts, nil
+}
+
 func (tr *TodoRepository) Create(ctx context.Context,
 	title domain.TodoTitle,
 	description domain.TodoDescription,
