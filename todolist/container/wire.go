@@ -15,7 +15,7 @@ import (
 )
 
 var repositorySet = wire.NewSet(repository.NewTodoRepository)
-var usecaseSet = wire.NewSet(usecase.NewTodoFindByIdInteractor, usecase.NewTodoCreateInteractor)
+var usecaseSet = wire.NewSet(usecase.NewTodoFindByIdInteractor, usecase.NewTodoFindAllInteractor, usecase.NewTodoCreateInteractor)
 var controllerSet = wire.NewSet(controller.NewTodoController)
 var configSet = wire.NewSet(config.NewConfig)
 
@@ -39,6 +39,7 @@ func Init() (*Container, error) {
 		newContainer,
 		wire.Bind(new(repositoryinterfaces.TodoRepositoryInterface), new(*repository.TodoRepository)),
 		wire.Bind(new(usecaseinterfaces.TodoFindUseCaseInterface), new(*usecase.TodoFindByIdInteractor)),
+		wire.Bind(new(usecaseinterfaces.TodoFindAllUseCaseInterface), new(*usecase.TodoFindAllInteractor)),
 		wire.Bind(new(usecaseinterfaces.TodoCreateUseCaseInterface), new(*usecase.TodoCreateInteractor)),
 		wire.Bind(new(controller.TodoControllerInterface), new(*controller.TodoController)),
 	)
