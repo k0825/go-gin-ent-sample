@@ -39,3 +39,15 @@ func (e *NotFoundError) Error() string {
 func NewNotFoundError(fieldName string, id string) *NotFoundError {
 	return &NotFoundError{FieldName: fieldName, Id: id}
 }
+
+type InternalServerError struct {
+	message string
+}
+
+func (e *InternalServerError) Error() string {
+	return e.message
+}
+
+func NewInternalServerError(message string) *InternalServerError {
+	return &InternalServerError{message: message}
+}
