@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/k0825/go-gin-ent-sample/datasource"
 	"github.com/k0825/go-gin-ent-sample/domainerrors"
 	"github.com/k0825/go-gin-ent-sample/ent"
 	"github.com/k0825/go-gin-ent-sample/ent/tag"
@@ -14,11 +15,11 @@ import (
 )
 
 type TodoRepository struct {
-	client *ent.Client
+	conn datasource.RDBConnectionInterface
 }
 
-func NewTodoRepository(client *ent.Client) (*TodoRepository, error) {
-	return &TodoRepository{client}, nil
+func NewTodoRepository(conn datasource.RDBConnectionInterface) (*TodoRepository, error) {
+	return &TodoRepository{conn}, nil
 }
 
 func (tr *TodoRepository) FindById(ctx context.Context, todoId domain.TodoId) (*domain.Todo, error) {
@@ -26,7 +27,16 @@ func (tr *TodoRepository) FindById(ctx context.Context, todoId domain.TodoId) (*
 		return nil, errors.New("TodoRepositoryInterface pointer is nil")
 	}
 
-	todo, err := tr.client.Todo.Query().Where(todo.ID(todoId.Value())).WithTags().Only(ctx)
+	client := tr.conn.GetTx(ctx)
+	if client == nil {
+		client = tr.conn.GetClient()
+	}
+
+	if client == nil {
+		return nil, errors.New("ent client is nil")
+	}
+
+	todo, err := client.Todo.Query().Where(todo.ID(todoId.Value())).WithTags().Only(ctx)
 
 	if err != nil {
 		nfErr := domainerrors.NewNotFoundError("Todo", todoId.String())
@@ -95,13 +105,12 @@ func (tr *TodoRepository) Create(ctx context.Context,
 		return nil, errors.New("TodoRepositoryInterface pointer is nil")
 	}
 
-	tx, err := tr.client.Tx(ctx)
-
-	if err != nil {
-		return nil, err
+	client := tr.conn.GetTx(ctx)
+	if client == nil {
+		return nil, errors.New("ent client is nil")
 	}
 
-	todoEnt, err := tx.Todo.Create().
+	todoEnt, err := client.Todo.Create().
 		SetTitle(title.Value()).
 		SetDescription(description.Value()).
 		SetImage(image.Value()).
@@ -110,15 +119,15 @@ func (tr *TodoRepository) Create(ctx context.Context,
 		Save(ctx)
 
 	if err != nil {
-		return nil, rollback(tx, err)
+		return nil, err
 	}
 
-	tagEnt, err := tx.Tag.MapCreateBulk(tags, func(c *ent.TagCreate, i int) {
+	tagEnt, err := client.Tag.MapCreateBulk(tags, func(c *ent.TagCreate, i int) {
 		c.SetKeyword(tags[i].Value()).SetTodo(todoEnt)
 	}).Save(ctx)
 
 	if err != nil {
-		return nil, rollback(tx, err)
+		return nil, err
 	}
 
 	dt, err := models.ConvertEntToTodo(todoEnt, tagEnt)
@@ -127,16 +136,7 @@ func (tr *TodoRepository) Create(ctx context.Context,
 		return nil, err
 	}
 
-	err = tx.Commit()
-
-	return dt, err
-}
-
-func rollback(tx *ent.Tx, err error) error {
-	if rerr := tx.Rollback(); rerr != nil {
-		err = errors.Wrap(err, rerr.Error())
-	}
-	return err
+	return dt, nil
 }
 
 func (tr *TodoRepository) Delete(ctx context.Context, todoId domain.TodoId) error {
@@ -144,28 +144,65 @@ func (tr *TodoRepository) Delete(ctx context.Context, todoId domain.TodoId) erro
 		return errors.New("TodoRepositoryInterface pointer is nil")
 	}
 
-	tx, err := tr.client.Tx(ctx)
-
-	if err != nil {
-		return err
+	client := tr.conn.GetTx(ctx)
+	if client == nil {
+		return errors.New("ent client is nil")
 	}
 
-	_, err = tx.Tag.Delete().Where(tag.HasTodoWith(todo.ID(todoId.Value()))).Exec(ctx)
+	_, err := client.Tag.Delete().Where(tag.HasTodoWith(todo.ID(todoId.Value()))).Exec(ctx)
 	if err != nil {
-		return rollback(tx, err)
+		return errors.WithStack(err)
 	}
 
-	_, err = tx.Todo.Delete().Where(todo.ID(todoId.Value())).Exec(ctx)
+	_, err = client.Todo.Delete().Where(todo.ID(todoId.Value())).Exec(ctx)
 
 	if err != nil {
-		return rollback(tx, err)
-	}
-
-	err = tx.Commit()
-
-	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	return nil
+}
+
+func (tr *TodoRepository) Update(ctx context.Context,
+	todoId domain.TodoId,
+	title *domain.TodoTitle,
+	description *domain.TodoDescription,
+	image *domain.TodoImage,
+	tags *[]domain.TodoTag,
+	startsAt *time.Time,
+	endsAt *time.Time) error {
+
+	if tr == nil {
+		return errors.New("TodoRepositoryInterface pointer is nil")
+	}
+
+	client := tr.conn.GetTx(ctx)
+	if client == nil {
+		return errors.New("ent client is nil")
+	}
+
+	if title != nil {
+		_, err := client.Todo.UpdateOneID(todoId.Value()).SetTitle(title.Value()).Save(ctx)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	if description != nil {
+		_, err := client.Todo.UpdateOneID(todoId.Value()).SetDescription(description.Value()).Save(ctx)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	if image != nil {
+		_, err := client.Todo.UpdateOneID(todoId.Value()).SetImage(image.Value()).Save(ctx)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	if tags != nil {
+
+	}
 }
