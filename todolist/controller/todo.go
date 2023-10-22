@@ -63,10 +63,15 @@ type todoFindApiResponse struct {
 	UpdatedAt   jsonTime  `json:"updated_at"`
 }
 
+type paginationMetaResponse struct {
+	Start int `json:"start"`
+	Take  int `json:"take"`
+	Total int `json:"total"`
+}
+
 type todoFindAllApiResponse struct {
-	Todos  []todoFindApiResponse `json:"todos"`
-	Page   int                   `json:"page"`
-	Number int                   `json:"number"`
+	Items  []todoFindApiResponse  `json:"items"`
+	Paging paginationMetaResponse `json:"paging"`
 }
 
 type todoCreateApiResponse struct {
@@ -135,22 +140,22 @@ func (tdc *TodoController) GetTodo(ctx *gin.Context) {
 }
 
 func (tdc *TodoController) GetAllTodo(ctx *gin.Context) {
-	spage := ctx.DefaultQuery("page", "1")
-	snumber := ctx.DefaultQuery("number", "10")
+	sstart := ctx.DefaultQuery("start", "1")
+	stake := ctx.DefaultQuery("take", "10")
 
-	page, err := strconv.Atoi(spage)
+	start, err := strconv.Atoi(sstart)
 	if err != nil {
 		ctx.JSON(400, gin.H{"message": "pageの形式が正しくありません"})
 		return
 	}
 
-	number, err := strconv.Atoi(snumber)
+	take, err := strconv.Atoi(stake)
 	if err != nil {
 		ctx.JSON(400, gin.H{"message": "numberの形式が正しくありません"})
 		return
 	}
 
-	request := usecaseinterfaces.NewTodoFindAllRequest(page, number)
+	request := usecaseinterfaces.NewTodoFindAllRequest(start, take)
 	response, err := tdc.todoFindAllUsecase.Handle(ctx, *request)
 	if err != nil {
 		var nfErr *domainerrors.NotFoundError
@@ -183,10 +188,15 @@ func (tdc *TodoController) GetAllTodo(ctx *gin.Context) {
 		}
 	}
 
+	resPaging := paginationMetaResponse{
+		Start: response.PaginationMeta.Start,
+		Take:  response.PaginationMeta.Take,
+		Total: response.PaginationMeta.Total,
+	}
+
 	resJson := todoFindAllApiResponse{
-		Todos:  resTodos,
-		Page:   request.Page,
-		Number: request.Number,
+		Items:  resTodos,
+		Paging: resPaging,
 	}
 
 	ctx.JSON(200, resJson)

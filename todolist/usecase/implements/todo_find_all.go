@@ -23,13 +23,13 @@ func (tfi *TodoFindAllInteractor) Handle(ctx context.Context, request interfaces
 		return nil, errors.New("TodoFindAllInteractor is nil.")
 	}
 
-	todos, err := tfi.TodoRepository.FindAll(ctx, request.Page, request.Number)
+	todos, pageMeta, err := tfi.TodoRepository.FindAll(ctx, request.Start, request.Take)
 
 	if err != nil {
 		return nil, err
 	}
 
-	response := interfaces.NewTodoFindAllResponse(todos)
+	response := interfaces.NewTodoFindAllResponse(todos, pageMeta)
 
 	return response, nil
 }

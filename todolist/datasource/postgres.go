@@ -28,7 +28,7 @@ type RDBConnectionInterface interface {
 	RunInTx(ctx context.Context, f func(ctx context.Context) (interface{}, error)) (interface{}, error)
 }
 
-func NewRDBConnection(conf *config.Config) (*ent.Client, error) {
+func NewRDBConnection(conf *config.Config) (*RDBConnection, error) {
 	client, err := ent.Open("postgres",
 		fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=disable",
 			conf.RDB.Host,
@@ -41,7 +41,7 @@ func NewRDBConnection(conf *config.Config) (*ent.Client, error) {
 		return nil, err
 	}
 
-	return client, nil
+	return &RDBConnection{client}, nil
 }
 
 func (conn *RDBConnection) GetClient() *ent.Client {

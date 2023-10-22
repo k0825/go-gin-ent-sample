@@ -62,9 +62,9 @@ func (tr *TodoRepository) FindById(ctx context.Context, todoId domain.TodoId) (*
 	return dt, nil
 }
 
-func (tr *TodoRepository) FindAll(ctx context.Context, page int, number int) ([]*domain.Todo, error) {
+func (tr *TodoRepository) FindAll(ctx context.Context, start int, take int) ([]*domain.Todo, *domain.PaginationMeta, error) {
 	if tr == nil {
-		return nil, errors.New("TodoRepositoryInterface pointer is nil")
+		return nil, nil, errors.New("TodoRepositoryInterface pointer is nil")
 	}
 
 	client := tr.conn.GetTx(ctx)
@@ -74,15 +74,15 @@ func (tr *TodoRepository) FindAll(ctx context.Context, page int, number int) ([]
 
 	if client == nil {
 		intErr := domainerrors.NewInternalServerError("client or transaction is not found")
-		return nil, errors.WithStack(intErr)
+		return nil, nil, errors.WithStack(intErr)
 	}
 
-	todos, err := client.Todo.Query().WithTags().Offset((page - 1) * number).Limit(number).All(ctx)
+	todos, err := client.Todo.Query().WithTags().Offset(start).Limit(take).All(ctx)
 
 	if err != nil {
 		nfErr := domainerrors.NewNotFoundError("Todo", "all")
 		wrapErr := errors.WithStack(nfErr)
-		return nil, wrapErr
+		return nil, nil, wrapErr
 	}
 
 	dts := make([]*domain.Todo, len(todos))
@@ -91,17 +91,26 @@ func (tr *TodoRepository) FindAll(ctx context.Context, page int, number int) ([]
 		if tags == nil {
 			intErr := domainerrors.NewInternalServerError(("Tag is incorrect"))
 			wrapErr := errors.WithStack(intErr)
-			return nil, wrapErr
+			return nil, nil, wrapErr
 		}
 
 		dt, err := models.ConvertEntToTodo(todo, tags)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, nil, errors.WithStack(err)
 		}
 
 		dts[i] = dt
+
 	}
-	return dts, nil
+
+	total, err := client.Todo.Query().Count(ctx)
+
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+	pageMeta := domain.NewPaginationMeta(start, take, total)
+
+	return dts, pageMeta, nil
 }
 
 func (tr *TodoRepository) Create(ctx context.Context,

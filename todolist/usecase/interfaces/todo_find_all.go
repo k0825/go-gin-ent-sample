@@ -7,24 +7,26 @@ import (
 )
 
 type TodoFindAllRequest struct {
-	Page   int
-	Number int
+	Start int
+	Take  int
 }
 
-func NewTodoFindAllRequest(page int, number int) *TodoFindAllRequest {
+func NewTodoFindAllRequest(start int, take int) *TodoFindAllRequest {
 	return &TodoFindAllRequest{
-		Page:   page,
-		Number: number,
+		Start: start,
+		Take:  take,
 	}
 }
 
 type TodoFindAllResponse struct {
-	Todos []*models.Todo
+	Todos          []*models.Todo
+	PaginationMeta *models.PaginationMeta
 }
 
-func NewTodoFindAllResponse(todos []*models.Todo) *TodoFindAllResponse {
+func NewTodoFindAllResponse(todos []*models.Todo, pageMeta *models.PaginationMeta) *TodoFindAllResponse {
 	return &TodoFindAllResponse{
-		Todos: todos,
+		Todos:          todos,
+		PaginationMeta: pageMeta,
 	}
 }
 
