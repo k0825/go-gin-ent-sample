@@ -23,7 +23,13 @@ func (tdi *TodoDeleteInteractor) Handle(ctx context.Context, request interfaces.
 		return errors.New("TodoDeleteInteractor is nil.")
 	}
 
-	err := tdi.todoRepository.Delete(ctx, request.Id)
+	_, err := tdi.todoRepository.RunInTx(ctx, func(ctx context.Context) (interface{}, error) {
+		err := tdi.todoRepository.Delete(ctx, request.Id)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return nil, nil
+	})
 
 	if err != nil {
 		return err
