@@ -55,6 +55,20 @@ func NewTodo(
 	}, nil
 }
 
+type PaginationMeta struct {
+	Start int
+	Take  int
+	Total int
+}
+
+func NewPaginationMeta(start int, take int, total int) *PaginationMeta {
+	return &PaginationMeta{
+		Start: start,
+		Take:  take,
+		Total: total,
+	}
+}
+
 func (todo Todo) GetId() TodoId {
 	return todo.id
 }
