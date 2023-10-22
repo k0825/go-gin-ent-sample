@@ -19,11 +19,11 @@ import (
 
 func Init() (*Container, error) {
 	configConfig := config.NewConfig()
-	client, err := datasource.NewConnection(configConfig)
+	rdbConnection, err := datasource.NewRDBConnection(configConfig)
 	if err != nil {
 		return nil, err
 	}
-	todoRepository, err := implements.NewTodoRepository(client)
+	todoRepository, err := implements.NewTodoRepository(rdbConnection)
 	if err != nil {
 		return nil, err
 	}
@@ -38,13 +38,15 @@ func Init() (*Container, error) {
 
 // wire.go:
 
+var configSet = wire.NewSet(config.NewConfig)
+
+var datasourceSet = wire.NewSet(datasource.NewRDBConnection)
+
 var repositorySet = wire.NewSet(implements.NewTodoRepository)
 
 var usecaseSet = wire.NewSet(implements2.NewTodoFindByIdInteractor, implements2.NewTodoFindAllInteractor, implements2.NewTodoCreateInteractor, implements2.NewTodoDeleteInteractor)
 
 var controllerSet = wire.NewSet(controller.NewTodoController)
-
-var configSet = wire.NewSet(config.NewConfig)
 
 type Container struct {
 	TodoController controller.TodoControllerInterface

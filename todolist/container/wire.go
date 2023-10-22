@@ -14,10 +14,11 @@ import (
 	usecaseinterfaces "github.com/k0825/go-gin-ent-sample/usecase/interfaces"
 )
 
+var configSet = wire.NewSet(config.NewConfig)
+var datasourceSet = wire.NewSet(datasource.NewRDBConnection)
 var repositorySet = wire.NewSet(repository.NewTodoRepository)
 var usecaseSet = wire.NewSet(usecase.NewTodoFindByIdInteractor, usecase.NewTodoFindAllInteractor, usecase.NewTodoCreateInteractor, usecase.NewTodoDeleteInteractor)
 var controllerSet = wire.NewSet(controller.NewTodoController)
-var configSet = wire.NewSet(config.NewConfig)
 
 type Container struct {
 	TodoController controller.TodoControllerInterface
@@ -31,12 +32,13 @@ func newContainer(controller controller.TodoControllerInterface) *Container {
 
 func Init() (*Container, error) {
 	wire.Build(
-		datasource.NewConnection,
 		configSet,
+		datasourceSet,
 		repositorySet,
 		usecaseSet,
 		controllerSet,
 		newContainer,
+		wire.Bind(new(datasource.RDBConnectionInterface), new(*datasource.RDBConnection)),
 		wire.Bind(new(repositoryinterfaces.TodoRepositoryInterface), new(*repository.TodoRepository)),
 		wire.Bind(new(usecaseinterfaces.TodoFindUseCaseInterface), new(*usecase.TodoFindByIdInteractor)),
 		wire.Bind(new(usecaseinterfaces.TodoFindAllUseCaseInterface), new(*usecase.TodoFindAllInteractor)),
