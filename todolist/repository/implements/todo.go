@@ -228,3 +228,13 @@ func (tr *TodoRepository) Delete(ctx context.Context, todoId domain.TodoId) erro
 
 // 	}
 // }
+
+func (tr *TodoRepository) RunInTx(ctx context.Context, f func(context.Context) (interface{}, error)) (interface{}, error) {
+	value, err := tr.conn.RunInTx(ctx, f)
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return value, nil
+}
