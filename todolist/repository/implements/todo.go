@@ -185,49 +185,57 @@ func (tr *TodoRepository) Delete(ctx context.Context, todoId domain.TodoId) erro
 	return nil
 }
 
-// func (tr *TodoRepository) Update(ctx context.Context,
-// 	todoId domain.TodoId,
-// 	title *domain.TodoTitle,
-// 	description *domain.TodoDescription,
-// 	image *domain.TodoImage,
-// 	tags *[]domain.TodoTag,
-// 	startsAt *time.Time,
-// 	endsAt *time.Time) error {
+func (tr *TodoRepository) Update(ctx context.Context,
+	todoId domain.TodoId,
+	title domain.TodoTitle,
+	description domain.TodoDescription,
+	image domain.TodoImage,
+	tags []domain.TodoTag,
+	startsAt time.Time,
+	endsAt time.Time) (*domain.Todo, error) {
 
-// 	if tr == nil {
-// 		return errors.New("TodoRepositoryInterface pointer is nil")
-// 	}
+	if tr == nil {
+		return nil, errors.New("TodoRepositoryInterface pointer is nil")
+	}
 
-// 	client := tr.conn.GetTx(ctx)
-// 	if client == nil {
-// 		return errors.New("ent client is nil")
-// 	}
+	client := tr.conn.GetTx(ctx)
+	if client == nil {
+		return nil, errors.New("ent client is nil")
+	}
 
-// 	if title != nil {
-// 		_, err := client.Todo.UpdateOneID(todoId.Value()).SetTitle(title.Value()).Save(ctx)
-// 		if err != nil {
-// 			return errors.WithStack(err)
-// 		}
-// 	}
+	_, err := client.Tag.Delete().Where(tag.HasTodoWith(todo.ID(todoId.Value()))).Exec(ctx)
 
-// 	if description != nil {
-// 		_, err := client.Todo.UpdateOneID(todoId.Value()).SetDescription(description.Value()).Save(ctx)
-// 		if err != nil {
-// 			return errors.WithStack(err)
-// 		}
-// 	}
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 
-// 	if image != nil {
-// 		_, err := client.Todo.UpdateOneID(todoId.Value()).SetImage(image.Value()).Save(ctx)
-// 		if err != nil {
-// 			return errors.WithStack(err)
-// 		}
-// 	}
+	todoEnt, err := client.Todo.UpdateOneID(todoId.Value()).
+		SetTitle(title.Value()).
+		SetDescription(description.Value()).
+		SetImage(image.Value()).
+		SetStartsAt(startsAt).
+		SetEndsAt(endsAt).Save(ctx)
 
-// 	if tags != nil {
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 
-// 	}
-// }
+	tagsEnt, err := client.Tag.MapCreateBulk(tags, func(c *ent.TagCreate, i int) {
+		c.SetKeyword(tags[i].Value()).SetTodoID(todoEnt.ID)
+	}).Save(ctx)
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	todo, err := models.ConvertEntToTodo(todoEnt, tagsEnt)
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return todo, nil
+}
 
 func (tr *TodoRepository) RunInTx(ctx context.Context, f func(context.Context) (interface{}, error)) (interface{}, error) {
 	value, err := tr.conn.RunInTx(ctx, f)

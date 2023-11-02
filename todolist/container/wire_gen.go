@@ -30,8 +30,9 @@ func Init() (*Container, error) {
 	todoFindByIdInteractor := implements2.NewTodoFindByIdInteractor(todoRepository)
 	todoFindAllInteractor := implements2.NewTodoFindAllInteractor(todoRepository)
 	todoCreateInteractor := implements2.NewTodoCreateInteractor(todoRepository)
+	todoUpdateInteractor := implements2.NewTodoUpdateInteractor(todoRepository)
 	todoDeleteInteractor := implements2.NewTodoDeleteInteractor(todoRepository)
-	todoController := controller.NewTodoController(todoFindByIdInteractor, todoFindAllInteractor, todoCreateInteractor, todoDeleteInteractor)
+	todoController := controller.NewTodoController(todoFindByIdInteractor, todoFindAllInteractor, todoCreateInteractor, todoUpdateInteractor, todoDeleteInteractor)
 	container := newContainer(todoController)
 	return container, nil
 }
@@ -44,7 +45,7 @@ var datasourceSet = wire.NewSet(datasource.NewRDBConnection)
 
 var repositorySet = wire.NewSet(implements.NewTodoRepository)
 
-var usecaseSet = wire.NewSet(implements2.NewTodoFindByIdInteractor, implements2.NewTodoFindAllInteractor, implements2.NewTodoCreateInteractor, implements2.NewTodoDeleteInteractor)
+var usecaseSet = wire.NewSet(implements2.NewTodoFindByIdInteractor, implements2.NewTodoFindAllInteractor, implements2.NewTodoCreateInteractor, implements2.NewTodoDeleteInteractor, implements2.NewTodoUpdateInteractor)
 
 var controllerSet = wire.NewSet(controller.NewTodoController)
 

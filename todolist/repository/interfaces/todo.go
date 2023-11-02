@@ -17,14 +17,14 @@ type TodoRepositoryInterface interface {
 		[]models.TodoTag,
 		time.Time,
 		time.Time) (*models.Todo, error)
-	// Update(context.Context,
-	// 	models.TodoId,
-	// 	*models.TodoTitle,
-	// 	*models.TodoDescription,
-	// 	*models.TodoImage,
-	// 	*[]models.TodoTag,
-	// 	*time.Time,
-	// 	*time.Time) error
+	Update(context.Context,
+		models.TodoId,
+		models.TodoTitle,
+		models.TodoDescription,
+		models.TodoImage,
+		[]models.TodoTag,
+		time.Time,
+		time.Time) (*models.Todo, error)
 	Delete(context.Context, models.TodoId) error
 	RunInTx(context.Context, func(context.Context) (interface{}, error)) (interface{}, error)
 }

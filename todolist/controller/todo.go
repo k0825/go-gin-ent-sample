@@ -15,6 +15,7 @@ type TodoControllerInterface interface {
 	GetTodo(ctx *gin.Context)
 	GetAllTodo(ctx *gin.Context)
 	PostTodo(ctx *gin.Context)
+	PutTodo(ctx *gin.Context)
 	DeleteTodo(ctx *gin.Context)
 }
 
@@ -22,6 +23,7 @@ type TodoController struct {
 	todoFindByIdUsecase usecaseinterfaces.TodoFindUseCaseInterface
 	todoFindAllUsecase  usecaseinterfaces.TodoFindAllUseCaseInterface
 	todoCreateUseCase   usecaseinterfaces.TodoCreateUseCaseInterface
+	todoUpdateUseCase   usecaseinterfaces.TodoUpdateUseCaseInterface
 	todoDeleteUseCase   usecaseinterfaces.TodoDeleteUseCaseInterface
 }
 
@@ -29,6 +31,7 @@ func NewTodoController(
 	todoFindByIdUsecase usecaseinterfaces.TodoFindUseCaseInterface,
 	todoFindAllUsecase usecaseinterfaces.TodoFindAllUseCaseInterface,
 	todoCreateUsecase usecaseinterfaces.TodoCreateUseCaseInterface,
+	todoUpdateUsecase usecaseinterfaces.TodoUpdateUseCaseInterface,
 	todoDeleteUsecase usecaseinterfaces.TodoDeleteUseCaseInterface) *TodoController {
 	return &TodoController{
 		todoFindByIdUsecase: todoFindByIdUsecase,
@@ -93,6 +96,28 @@ type todoCreateApiRequest struct {
 	Tags        []string `json:"tags"`
 	StartsAt    jsonTime `json:"starts_at"`
 	EndsAt      jsonTime `json:"ends_at"`
+}
+
+type todoUpdateApiResponse struct {
+	Id          uuid.UUID `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	Tags        []string  `json:"tags"`
+	StartsAt    jsonTime  `json:"starts_at"`
+	EndsAt      jsonTime  `json:"ends_at"`
+	CreatedAt   jsonTime  `json:"created_at"`
+	UpdatedAt   jsonTime  `json:"updated_at"`
+}
+
+type todoUpdateApiRequest struct {
+	Id          uuid.UUID `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	Tags        []string  `json:"tags"`
+	StartsAt    jsonTime  `json:"starts_at"`
+	EndsAt      jsonTime  `json:"ends_at"`
 }
 
 func (tdc *TodoController) GetTodo(ctx *gin.Context) {
@@ -217,6 +242,47 @@ func (tdc *TodoController) PostTodo(ctx *gin.Context) {
 	}
 
 	response, err := tdc.todoCreateUseCase.Handle(ctx, *request)
+	if err != nil {
+		ctx.JSON(500, gin.H{"message": "実行中にエラーが発生しました"})
+		return
+	}
+
+	TodoTags := response.Todo.GetTags()
+	resTags := make([]string, len(TodoTags))
+	for i, t := range TodoTags {
+		resTags[i] = t.Value()
+	}
+
+	resJson := todoCreateApiResponse{
+		Id:          response.Todo.GetId().Value(),
+		Title:       response.Todo.GetTitle().Value(),
+		Description: response.Todo.GetDescription().Value(),
+		Image:       response.Todo.GetImage().Value(),
+		Tags:        resTags,
+		StartsAt:    jsonTime{response.Todo.GetStartsAt()},
+		EndsAt:      jsonTime{response.Todo.GetEndsAt()},
+		CreatedAt:   jsonTime{response.Todo.GetCreatedAt()},
+		UpdatedAt:   jsonTime{response.Todo.GetUpdatedAt()},
+	}
+
+	ctx.JSON(200, resJson)
+}
+
+func (tdc *TodoController) PutTodo(ctx *gin.Context) {
+	var req todoUpdateApiRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.JSON(400, gin.H{"message": "リクエストの形式が正しくありません"})
+		return
+	}
+
+	request, err := usecaseinterfaces.NewTodoUpdateRequest(req.Id, req.Title, req.Description, req.Image, req.Tags, req.StartsAt.Time, req.EndsAt.Time)
+
+	if err != nil {
+		ctx.JSON(500, gin.H{"message": "リクエスト生成中にエラーが発生しました"})
+		return
+	}
+
+	response, err := tdc.todoUpdateUseCase.Handle(ctx, *request)
 	if err != nil {
 		ctx.JSON(500, gin.H{"message": "実行中にエラーが発生しました"})
 		return
