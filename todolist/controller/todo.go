@@ -111,13 +111,12 @@ type todoUpdateApiResponse struct {
 }
 
 type todoUpdateApiRequest struct {
-	Id          uuid.UUID `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Image       string    `json:"image"`
-	Tags        []string  `json:"tags"`
-	StartsAt    jsonTime  `json:"starts_at"`
-	EndsAt      jsonTime  `json:"ends_at"`
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Image       string   `json:"image"`
+	Tags        []string `json:"tags"`
+	StartsAt    jsonTime `json:"starts_at"`
+	EndsAt      jsonTime `json:"ends_at"`
 }
 
 func (tdc *TodoController) GetTodo(ctx *gin.Context) {
@@ -269,13 +268,18 @@ func (tdc *TodoController) PostTodo(ctx *gin.Context) {
 }
 
 func (tdc *TodoController) PutTodo(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	// idをuuidに変換する
+	uid, err := uuid.Parse(id)
+
 	var req todoUpdateApiRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.JSON(400, gin.H{"message": "リクエストの形式が正しくありません"})
 		return
 	}
 
-	request, err := usecaseinterfaces.NewTodoUpdateRequest(req.Id, req.Title, req.Description, req.Image, req.Tags, req.StartsAt.Time, req.EndsAt.Time)
+	request, err := usecaseinterfaces.NewTodoUpdateRequest(uid, req.Title, req.Description, req.Image, req.Tags, req.StartsAt.Time, req.EndsAt.Time)
 
 	if err != nil {
 		ctx.JSON(500, gin.H{"message": "リクエスト生成中にエラーが発生しました"})
