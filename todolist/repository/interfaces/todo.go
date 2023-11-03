@@ -26,5 +26,5 @@ type TodoRepositoryInterface interface {
 		time.Time,
 		time.Time) (*models.Todo, error)
 	Delete(context.Context, models.TodoId) error
-	RunInTx(context.Context, func(context.Context) (interface{}, error)) (interface{}, error)
+	RunInTx(context.Context, func(context.Context) (any, error)) (any, error)
 }

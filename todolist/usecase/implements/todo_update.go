@@ -20,19 +20,18 @@ func NewTodoUpdateInteractor(tr repositoryinterfaces.TodoRepositoryInterface) *T
 	}
 }
 
-func (tci *TodoUpdateInteractor) Handle(ctx context.Context, request interfaces.TodoUpdateRequest) (*interfaces.TodoUpdateResponse, error) {
-	if tci == nil {
+func (tui *TodoUpdateInteractor) Handle(ctx context.Context, request interfaces.TodoUpdateRequest) (*interfaces.TodoUpdateResponse, error) {
+	if tui == nil {
 		return nil, errors.New("TodoUpdateInteractor is nil.")
 	}
-
-	v, err := tci.todoRepository.RunInTx(ctx, func(ctx context.Context) (interface{}, error) {
-		_, err := tci.todoRepository.FindById(ctx, request.Id)
+	v, err := tui.todoRepository.RunInTx(ctx, func(ctx context.Context) (any, error) {
+		_, err := tui.todoRepository.FindById(ctx, request.Id)
 
 		if err != nil {
 			return nil, err
 		}
 
-		v, err := tci.todoRepository.Update(ctx, request.Id, request.Title, request.Description, request.Image, request.Tags, request.StartsAt, request.EndsAt)
+		v, err := tui.todoRepository.Update(ctx, request.Id, request.Title, request.Description, request.Image, request.Tags, request.StartsAt, request.EndsAt)
 
 		if err != nil {
 			return nil, err

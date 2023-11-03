@@ -25,7 +25,7 @@ type RDBConnectionInterface interface {
 	Begin(ctx context.Context) (*ent.Tx, error)
 	Rollback(tx *ent.Tx) error
 	Commit(tx *ent.Tx) error
-	RunInTx(ctx context.Context, f func(ctx context.Context) (interface{}, error)) (interface{}, error)
+	RunInTx(ctx context.Context, f func(ctx context.Context) (any, error)) (any, error)
 }
 
 func NewRDBConnection(conf *config.Config) (*RDBConnection, error) {
@@ -74,7 +74,7 @@ func (conn *RDBConnection) Commit(tx *ent.Tx) error {
 	return tx.Commit()
 }
 
-func (conn *RDBConnection) RunInTx(ctx context.Context, f func(ctx context.Context) (interface{}, error)) (interface{}, error) {
+func (conn *RDBConnection) RunInTx(ctx context.Context, f func(ctx context.Context) (any, error)) (any, error) {
 	tx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, err

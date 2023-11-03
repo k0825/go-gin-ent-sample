@@ -237,7 +237,7 @@ func (tr *TodoRepository) Update(ctx context.Context,
 	return todo, nil
 }
 
-func (tr *TodoRepository) RunInTx(ctx context.Context, f func(context.Context) (interface{}, error)) (interface{}, error) {
+func (tr *TodoRepository) RunInTx(ctx context.Context, f func(context.Context) (any, error)) (any, error) {
 	value, err := tr.conn.RunInTx(ctx, f)
 
 	if err != nil {

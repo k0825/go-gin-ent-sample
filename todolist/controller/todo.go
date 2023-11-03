@@ -38,6 +38,7 @@ func NewTodoController(
 		todoFindAllUsecase:  todoFindAllUsecase,
 		todoCreateUseCase:   todoCreateUsecase,
 		todoDeleteUseCase:   todoDeleteUsecase,
+		todoUpdateUseCase:   todoUpdateUsecase,
 	}
 }
 
@@ -273,6 +274,11 @@ func (tdc *TodoController) PutTodo(ctx *gin.Context) {
 	// idをuuidに変換する
 	uid, err := uuid.Parse(id)
 
+	if err != nil {
+		ctx.JSON(400, gin.H{"message": "UUID変換中にエラーが発生しました。IDの形式が正しくありません"})
+		return
+	}
+
 	var req todoUpdateApiRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.JSON(400, gin.H{"message": "リクエストの形式が正しくありません"})
@@ -288,7 +294,12 @@ func (tdc *TodoController) PutTodo(ctx *gin.Context) {
 
 	response, err := tdc.todoUpdateUseCase.Handle(ctx, *request)
 	if err != nil {
-		ctx.JSON(500, gin.H{"message": "実行中にエラーが発生しました"})
+		var nfErr *domainerrors.NotFoundError
+		if errors.As(err, &nfErr) {
+			ctx.JSON(404, gin.H{"message": "指定されたIDの広告は存在しません"})
+		} else {
+			ctx.JSON(500, gin.H{"message": "実行中にエラーが発生しました"})
+		}
 		return
 	}
 
@@ -298,7 +309,7 @@ func (tdc *TodoController) PutTodo(ctx *gin.Context) {
 		resTags[i] = t.Value()
 	}
 
-	resJson := todoCreateApiResponse{
+	resJson := todoUpdateApiResponse{
 		Id:          response.Todo.GetId().Value(),
 		Title:       response.Todo.GetTitle().Value(),
 		Description: response.Todo.GetDescription().Value(),
