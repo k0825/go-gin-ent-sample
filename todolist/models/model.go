@@ -104,7 +104,3 @@ func (todo Todo) GetCreatedAt() time.Time {
 func (todo Todo) GetUpdatedAt() time.Time {
 	return todo.updatedAt
 }
-
-func (todo *Todo) updateUpdatedAt() {
-	todo.updatedAt = time.Now()
-}

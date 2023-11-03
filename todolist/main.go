@@ -26,5 +26,7 @@ func setupRouter() *gin.Engine {
 
 func main() {
 	r := setupRouter()
-	r.Run()
+	if err := r.Run(); err != nil {
+		panic(err)
+	}
 }
