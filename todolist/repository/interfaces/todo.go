@@ -9,6 +9,10 @@ import (
 
 type TodoRepositoryInterface interface {
 	FindById(context.Context, models.TodoId) (*models.Todo, error)
+	FindByTitle(context.Context, models.TodoTitle) ([]*models.Todo, *models.PaginationMeta, error)
+	FindByDescription(context.Context, models.TodoDescription) ([]*models.Todo, *models.PaginationMeta, error)
+	FindByImage(context.Context, models.TodoImage) ([]*models.Todo, *models.PaginationMeta, error)
+	FindByTag(context.Context, models.TodoTag) ([]*models.Todo, *models.PaginationMeta, error)
 	FindAll(context.Context, int, int) ([]*models.Todo, *models.PaginationMeta, error)
 	Create(context.Context,
 		models.TodoTitle,
