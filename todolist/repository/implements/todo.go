@@ -62,7 +62,7 @@ func (tr *TodoRepository) FindById(ctx context.Context, todoId domain.TodoId) (*
 	return dt, nil
 }
 
-func (tr *TodoRepository) FindByTitle(ctx context.Context, title domain.TodoTitle, start int, take int) ([]*domain.Todo, *domain.PaginationMeta, error) {
+func (tr *TodoRepository) FindByTitle(ctx context.Context, title string, start int, take int) ([]*domain.Todo, *domain.PaginationMeta, error) {
 	if tr == nil {
 		return nil, nil, errors.New("TodoRepositoryInterface pointer is nil")
 	}
@@ -77,7 +77,7 @@ func (tr *TodoRepository) FindByTitle(ctx context.Context, title domain.TodoTitl
 		return nil, nil, errors.WithStack(intErr)
 	}
 
-	todos, err := client.Todo.Query().Where(todo.TitleContains(title.Value())).WithTags().Offset(start).Limit(take).All(ctx)
+	todos, err := client.Todo.Query().Where(todo.TitleContains(title)).WithTags().Offset(start).Limit(take).All(ctx)
 
 	if err != nil && !ent.IsNotFound(err) {
 		return nil, nil, errors.WithStack(err)
@@ -99,7 +99,7 @@ func (tr *TodoRepository) FindByTitle(ctx context.Context, title domain.TodoTitl
 		dts[i] = dt
 	}
 
-	total, err := client.Todo.Query().Where(todo.TitleContains(title.Value())).Count(ctx)
+	total, err := client.Todo.Query().Where(todo.TitleContains(title)).Count(ctx)
 
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
@@ -109,7 +109,7 @@ func (tr *TodoRepository) FindByTitle(ctx context.Context, title domain.TodoTitl
 	return dts, pageMeta, nil
 }
 
-func (tr *TodoRepository) FindByDescription(ctx context.Context, description domain.TodoDescription, start int, take int) ([]*domain.Todo, *domain.PaginationMeta, error) {
+func (tr *TodoRepository) FindByDescription(ctx context.Context, description string, start int, take int) ([]*domain.Todo, *domain.PaginationMeta, error) {
 	if tr == nil {
 		return nil, nil, errors.New("TodoRepositoryInterface pointer is nil")
 	}
@@ -124,7 +124,7 @@ func (tr *TodoRepository) FindByDescription(ctx context.Context, description dom
 		return nil, nil, errors.WithStack(intErr)
 	}
 
-	todos, err := client.Todo.Query().Where(todo.DescriptionContains(description.Value())).WithTags().Offset(start).Limit(take).All(ctx)
+	todos, err := client.Todo.Query().Where(todo.DescriptionContains(description)).WithTags().Offset(start).Limit(take).All(ctx)
 
 	if err != nil && !ent.IsNotFound(err) {
 		return nil, nil, errors.WithStack(err)
@@ -146,7 +146,7 @@ func (tr *TodoRepository) FindByDescription(ctx context.Context, description dom
 		dts[i] = dt
 	}
 
-	total, err := client.Todo.Query().Where(todo.DescriptionContains(description.Value())).Count(ctx)
+	total, err := client.Todo.Query().Where(todo.DescriptionContains(description)).Count(ctx)
 
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
@@ -156,7 +156,7 @@ func (tr *TodoRepository) FindByDescription(ctx context.Context, description dom
 	return dts, pageMeta, nil
 }
 
-func (tr *TodoRepository) FindByImage(ctx context.Context, image domain.TodoImage, start int, take int) ([]*domain.Todo, *domain.PaginationMeta, error) {
+func (tr *TodoRepository) FindByImage(ctx context.Context, image string, start int, take int) ([]*domain.Todo, *domain.PaginationMeta, error) {
 	if tr == nil {
 		return nil, nil, errors.New("TodoRepositoryInterface pointer is nil")
 	}
@@ -171,7 +171,7 @@ func (tr *TodoRepository) FindByImage(ctx context.Context, image domain.TodoImag
 		return nil, nil, errors.WithStack(intErr)
 	}
 
-	todos, err := client.Todo.Query().Where(todo.ImageContains(image.Value())).WithTags().Offset(start).Limit(take).All(ctx)
+	todos, err := client.Todo.Query().Where(todo.ImageContains(image)).WithTags().Offset(start).Limit(take).All(ctx)
 
 	if err != nil && !ent.IsNotFound(err) {
 		return nil, nil, errors.WithStack(err)
@@ -193,7 +193,7 @@ func (tr *TodoRepository) FindByImage(ctx context.Context, image domain.TodoImag
 		dts[i] = dt
 	}
 
-	total, err := client.Todo.Query().Where(todo.ImageContains(image.Value())).Count(ctx)
+	total, err := client.Todo.Query().Where(todo.ImageContains(image)).Count(ctx)
 
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
@@ -203,7 +203,7 @@ func (tr *TodoRepository) FindByImage(ctx context.Context, image domain.TodoImag
 	return dts, pageMeta, nil
 }
 
-func (tr *TodoRepository) FindByTag(ctx context.Context, todotag domain.TodoTag, start int, take int) ([]*domain.Todo, *domain.PaginationMeta, error) {
+func (tr *TodoRepository) FindByTag(ctx context.Context, todotag string, start int, take int) ([]*domain.Todo, *domain.PaginationMeta, error) {
 	if tr == nil {
 		return nil, nil, errors.New("TodoRepositoryInterface pointer is nil")
 	}
@@ -218,7 +218,7 @@ func (tr *TodoRepository) FindByTag(ctx context.Context, todotag domain.TodoTag,
 		return nil, nil, errors.WithStack(intErr)
 	}
 
-	todos, err := client.Todo.Query().Where(todo.HasTagsWith(tag.Keyword(todotag.Value()))).WithTags().Offset(start).Limit(take).All(ctx)
+	todos, err := client.Todo.Query().Where(todo.HasTagsWith(tag.Keyword(todotag))).WithTags().Offset(start).Limit(take).All(ctx)
 
 	dts := make([]*domain.Todo, len(todos))
 	for i, t := range todos {
@@ -236,7 +236,7 @@ func (tr *TodoRepository) FindByTag(ctx context.Context, todotag domain.TodoTag,
 		dts[i] = dt
 	}
 
-	total, err := client.Todo.Query().Where(todo.HasTagsWith(tag.Keyword(todotag.Value()))).Count(ctx)
+	total, err := client.Todo.Query().Where(todo.HasTagsWith(tag.Keyword(todotag))).Count(ctx)
 
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
