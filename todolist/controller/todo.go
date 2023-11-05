@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -17,6 +18,7 @@ type TodoControllerInterface interface {
 	PostTodo(ctx *gin.Context)
 	PutTodo(ctx *gin.Context)
 	DeleteTodo(ctx *gin.Context)
+	SearchTodo(ctx *gin.Context)
 }
 
 type TodoController struct {
@@ -25,6 +27,7 @@ type TodoController struct {
 	todoCreateUseCase   usecaseinterfaces.TodoCreateUseCaseInterface
 	todoUpdateUseCase   usecaseinterfaces.TodoUpdateUseCaseInterface
 	todoDeleteUseCase   usecaseinterfaces.TodoDeleteUseCaseInterface
+	todoSearchUseCase   usecaseinterfaces.TodoSearchUseCaseInterface
 }
 
 func NewTodoController(
@@ -32,13 +35,15 @@ func NewTodoController(
 	todoFindAllUsecase usecaseinterfaces.TodoFindAllUseCaseInterface,
 	todoCreateUsecase usecaseinterfaces.TodoCreateUseCaseInterface,
 	todoUpdateUsecase usecaseinterfaces.TodoUpdateUseCaseInterface,
-	todoDeleteUsecase usecaseinterfaces.TodoDeleteUseCaseInterface) *TodoController {
+	todoDeleteUsecase usecaseinterfaces.TodoDeleteUseCaseInterface,
+	todoSearchUsecase usecaseinterfaces.TodoSearchUseCaseInterface) *TodoController {
 	return &TodoController{
 		todoFindByIdUsecase: todoFindByIdUsecase,
 		todoFindAllUsecase:  todoFindAllUsecase,
 		todoCreateUseCase:   todoCreateUsecase,
 		todoDeleteUseCase:   todoDeleteUsecase,
 		todoUpdateUseCase:   todoUpdateUsecase,
+		todoSearchUseCase:   todoSearchUsecase,
 	}
 }
 
@@ -118,6 +123,11 @@ type todoUpdateApiRequest struct {
 	Tags        []string `json:"tags"`
 	StartsAt    jsonTime `json:"starts_at"`
 	EndsAt      jsonTime `json:"ends_at"`
+}
+
+type todoSearchApiResponse struct {
+	Items  []todoFindApiResponse  `json:"items"`
+	Paging paginationMetaResponse `json:"paging"`
 }
 
 func (tdc *TodoController) GetTodo(ctx *gin.Context) {
@@ -348,4 +358,76 @@ func (tdc *TodoController) DeleteTodo(ctx *gin.Context) {
 	}
 
 	ctx.JSON(204, nil)
+}
+
+func (tdc *TodoController) SearchTodo(ctx *gin.Context) {
+	sstart := ctx.DefaultQuery("start", "1")
+	stake := ctx.DefaultQuery("take", "10")
+	title := ctx.Query("title")
+	description := ctx.Query("description")
+	image := ctx.Query("image")
+	tag := ctx.Query("tag")
+
+	fmt.Println(title)
+	fmt.Println(description)
+	fmt.Println(image)
+	fmt.Println(tag)
+
+	start, err := strconv.Atoi(sstart)
+	if err != nil {
+		ctx.JSON(400, gin.H{"message": "pageの形式が正しくありません"})
+		return
+	}
+
+	take, err := strconv.Atoi(stake)
+	if err != nil {
+		ctx.JSON(400, gin.H{"message": "numberの形式が正しくありません"})
+		return
+	}
+
+	request, err := usecaseinterfaces.NewTodoSearchRequest(title, description, image, tag, start, take)
+	response, err := tdc.todoSearchUseCase.Handle(ctx, *request)
+	if err != nil {
+		var nfErr *domainerrors.NotFoundError
+		if errors.As(err, &nfErr) {
+			ctx.JSON(404, gin.H{"message": "広告は登録されていません"})
+		} else {
+			ctx.JSON(500, gin.H{"message": "実行中にエラーが発生しました"})
+		}
+		return
+	}
+
+	resTodos := make([]todoFindApiResponse, len(response.Todos))
+	for i, todo := range response.Todos {
+		TodoTags := todo.GetTags()
+		resTags := make([]string, len(TodoTags))
+		for i, t := range TodoTags {
+			resTags[i] = t.Value()
+		}
+
+		resTodos[i] = todoFindApiResponse{
+			Id:          todo.GetId().Value(),
+			Title:       todo.GetTitle().Value(),
+			Description: todo.GetDescription().Value(),
+			Image:       todo.GetImage().Value(),
+			Tags:        resTags,
+			StartsAt:    jsonTime{todo.GetStartsAt()},
+			EndsAt:      jsonTime{todo.GetEndsAt()},
+			CreatedAt:   jsonTime{todo.GetCreatedAt()},
+			UpdatedAt:   jsonTime{todo.GetUpdatedAt()},
+		}
+	}
+
+	resPaging := paginationMetaResponse{
+		Start: response.PaginationMeta.Start,
+		Take:  response.PaginationMeta.Take,
+		Total: response.PaginationMeta.Total,
+	}
+
+	resJson := todoSearchApiResponse{
+		Items:  resTodos,
+		Paging: resPaging,
+	}
+
+	ctx.JSON(200, resJson)
 }

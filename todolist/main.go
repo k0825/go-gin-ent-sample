@@ -20,6 +20,7 @@ func setupRouter() *gin.Engine {
 	r.DELETE("/todos/:id", c.TodoController.DeleteTodo)
 	r.POST("/todos", c.TodoController.PostTodo)
 	r.PUT("/todos/:id", c.TodoController.PutTodo)
+	r.GET("/todos/search", c.TodoController.SearchTodo)
 
 	return r
 }
