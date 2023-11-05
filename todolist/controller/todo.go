@@ -175,7 +175,7 @@ func (tdc *TodoController) GetTodo(ctx *gin.Context) {
 }
 
 func (tdc *TodoController) GetAllTodo(ctx *gin.Context) {
-	sstart := ctx.DefaultQuery("start", "1")
+	sstart := ctx.DefaultQuery("start", "0")
 	stake := ctx.DefaultQuery("take", "10")
 
 	start, err := strconv.Atoi(sstart)
@@ -361,7 +361,7 @@ func (tdc *TodoController) DeleteTodo(ctx *gin.Context) {
 }
 
 func (tdc *TodoController) SearchTodo(ctx *gin.Context) {
-	sstart := ctx.DefaultQuery("start", "1")
+	sstart := ctx.DefaultQuery("start", "0")
 	stake := ctx.DefaultQuery("take", "10")
 	title := ctx.Query("title")
 	description := ctx.Query("description")
