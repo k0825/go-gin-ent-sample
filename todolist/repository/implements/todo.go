@@ -218,29 +218,25 @@ func (tr *TodoRepository) FindByTag(ctx context.Context, todotag domain.TodoTag,
 		return nil, nil, errors.WithStack(intErr)
 	}
 
-	todos, err := client.Todo.Query().Where(tag.KeywordContains(todotag.Value())).WithTags().Offset(start).Limit(take).All(ctx)
-
-	if err != nil && !ent.IsNotFound(err) {
-		return nil, nil, errors.WithStack(err)
-	}
+	todos, err := client.Todo.Query().Where(todo.HasTagsWith(tag.Keyword(todotag.Value()))).WithTags().All(ctx)
 
 	dts := make([]*domain.Todo, len(todos))
-	for i, todo := range todos {
-		tags := todo.Edges.Tags
+	for i, t := range todos {
+		tags := t.Edges.Tags
 		if tags == nil {
 			intErr := domainerrors.NewInternalServerError(("Tag is incorrect"))
 			wrapErr := errors.WithStack(intErr)
 			return nil, nil, wrapErr
 		}
 
-		dt, err := models.ConvertEntToTodo(todo, tags)
+		dt, err := models.ConvertEntToTodo(t, tags)
 		if err != nil {
 			return nil, nil, errors.WithStack(err)
 		}
 		dts[i] = dt
 	}
 
-	total, err := client.Todo.Query().Where(todo.TitleContains(title.Value())).Count(ctx)
+	total, err := client.Todo.Query().Where(todo.HasTagsWith(tag.Keyword(todotag.Value()))).Count(ctx)
 
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
