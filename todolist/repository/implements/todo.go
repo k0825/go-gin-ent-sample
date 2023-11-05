@@ -218,7 +218,7 @@ func (tr *TodoRepository) FindByTag(ctx context.Context, todotag domain.TodoTag,
 		return nil, nil, errors.WithStack(intErr)
 	}
 
-	todos, err := client.Todo.Query().Where(todo.HasTagsWith(tag.Keyword(todotag.Value()))).WithTags().All(ctx)
+	todos, err := client.Todo.Query().Where(todo.HasTagsWith(tag.Keyword(todotag.Value()))).WithTags().Offset(start).Limit(take).All(ctx)
 
 	dts := make([]*domain.Todo, len(todos))
 	for i, t := range todos {
