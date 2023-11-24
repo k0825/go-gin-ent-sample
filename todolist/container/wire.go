@@ -17,7 +17,7 @@ import (
 var configSet = wire.NewSet(config.NewConfig)
 var datasourceSet = wire.NewSet(datasource.NewRDBConnection)
 var repositorySet = wire.NewSet(repository.NewTodoRepository)
-var usecaseSet = wire.NewSet(usecase.NewTodoFindByIdInteractor, usecase.NewTodoFindAllInteractor, usecase.NewTodoCreateInteractor, usecase.NewTodoDeleteInteractor, usecase.NewTodoUpdateInteractor, usecase.NewTodoSearchInteractor)
+var usecaseSet = wire.NewSet(usecase.NewTodoFindByIdInteractor, usecase.NewTodoFindAllInteractor, usecase.NewTodoCreateInteractor, usecase.NewTodoDeleteInteractor, usecase.NewTodoUpdateInteractor, usecase.NewTodoSearchInteractor, usecase.NewTodoExportInteractor)
 var controllerSet = wire.NewSet(controller.NewTodoController)
 
 type Container struct {
@@ -46,6 +46,7 @@ func Init() (*Container, error) {
 		wire.Bind(new(usecaseinterfaces.TodoDeleteUseCaseInterface), new(*usecase.TodoDeleteInteractor)),
 		wire.Bind(new(usecaseinterfaces.TodoUpdateUseCaseInterface), new(*usecase.TodoUpdateInteractor)),
 		wire.Bind(new(usecaseinterfaces.TodoSearchUseCaseInterface), new(*usecase.TodoSearchInteractor)),
+		wire.Bind(new(usecaseinterfaces.TodoExportUseCaseInterface), new(*usecase.TodoExportInteractor)),
 		wire.Bind(new(controller.TodoControllerInterface), new(*controller.TodoController)),
 	)
 	return nil, nil

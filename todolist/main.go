@@ -22,6 +22,8 @@ func setupRouter() *gin.Engine {
 	r.PUT("/todos/:id", c.TodoController.PutTodo)
 	r.GET("/todos/search", c.TodoController.SearchTodo)
 
+	r.GET("/export", c.TodoController.ExportTodo)
+
 	return r
 }
 
