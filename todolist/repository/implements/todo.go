@@ -297,6 +297,49 @@ func (tr *TodoRepository) FindAll(ctx context.Context, start int, take int) ([]*
 	return dts, pageMeta, nil
 }
 
+func (tr *TodoRepository) Export(ctx context.Context) ([]*domain.Todo, error) {
+	if tr == nil {
+		return nil, errors.New("TodoRepositoryInterface pointer is nil")
+	}
+
+	client := tr.conn.GetTx(ctx)
+	if client == nil {
+		client = tr.conn.GetClient()
+	}
+
+	if client == nil {
+		intErr := domainerrors.NewInternalServerError("client or transaction is not found")
+		return nil, errors.WithStack(intErr)
+	}
+
+	todos, err := client.Todo.Query().WithTags().All(ctx)
+
+	if err != nil {
+		nfErr := domainerrors.NewNotFoundError("Todo", "all")
+		wrapErr := errors.WithStack(nfErr)
+		return nil, wrapErr
+	}
+
+	dts := make([]*domain.Todo, len(todos))
+	for i, todo := range todos {
+		tags := todo.Edges.Tags
+		if tags == nil {
+			intErr := domainerrors.NewInternalServerError(("Tag is incorrect"))
+			wrapErr := errors.WithStack(intErr)
+			return nil, wrapErr
+		}
+
+		dt, err := models.ConvertEntToTodo(todo, tags)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		dts[i] = dt
+	}
+
+	return dts, nil
+}
+
 func (tr *TodoRepository) Create(ctx context.Context,
 	title domain.TodoTitle,
 	description domain.TodoDescription,

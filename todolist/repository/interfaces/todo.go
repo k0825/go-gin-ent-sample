@@ -14,6 +14,7 @@ type TodoRepositoryInterface interface {
 	FindByImage(context.Context, string, int, int) ([]*models.Todo, *models.PaginationMeta, error)
 	FindByTag(context.Context, string, int, int) ([]*models.Todo, *models.PaginationMeta, error)
 	FindAll(context.Context, int, int) ([]*models.Todo, *models.PaginationMeta, error)
+	Export(context.Context) ([]*models.Todo, error)
 	Create(context.Context,
 		models.TodoTitle,
 		models.TodoDescription,
