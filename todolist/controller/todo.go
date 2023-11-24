@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -19,6 +20,7 @@ type TodoControllerInterface interface {
 	PutTodo(ctx *gin.Context)
 	DeleteTodo(ctx *gin.Context)
 	SearchTodo(ctx *gin.Context)
+	ExportTodo(ctx *gin.Context)
 }
 
 type TodoController struct {
@@ -28,6 +30,7 @@ type TodoController struct {
 	todoUpdateUseCase   usecaseinterfaces.TodoUpdateUseCaseInterface
 	todoDeleteUseCase   usecaseinterfaces.TodoDeleteUseCaseInterface
 	todoSearchUseCase   usecaseinterfaces.TodoSearchUseCaseInterface
+	todoExportUseCase   usecaseinterfaces.TodoExportUseCaseInterface
 }
 
 func NewTodoController(
@@ -36,7 +39,8 @@ func NewTodoController(
 	todoCreateUsecase usecaseinterfaces.TodoCreateUseCaseInterface,
 	todoUpdateUsecase usecaseinterfaces.TodoUpdateUseCaseInterface,
 	todoDeleteUsecase usecaseinterfaces.TodoDeleteUseCaseInterface,
-	todoSearchUsecase usecaseinterfaces.TodoSearchUseCaseInterface) *TodoController {
+	todoSearchUsecase usecaseinterfaces.TodoSearchUseCaseInterface,
+	todoExportUsecase usecaseinterfaces.TodoExportUseCaseInterface) *TodoController {
 	return &TodoController{
 		todoFindByIdUsecase: todoFindByIdUsecase,
 		todoFindAllUsecase:  todoFindAllUsecase,
@@ -44,6 +48,7 @@ func NewTodoController(
 		todoDeleteUseCase:   todoDeleteUsecase,
 		todoUpdateUseCase:   todoUpdateUsecase,
 		todoSearchUseCase:   todoSearchUsecase,
+		todoExportUseCase:   todoExportUsecase,
 	}
 }
 
@@ -430,4 +435,47 @@ func (tdc *TodoController) SearchTodo(ctx *gin.Context) {
 	}
 
 	ctx.JSON(200, resJson)
+}
+
+func (tdc *TodoController) ExportTodo(ctx *gin.Context) {
+	response, err := tdc.todoExportUseCase.Handle(ctx)
+	if err != nil {
+		ctx.JSON(500, gin.H{"message": "実行中にエラーが発生しました"})
+		return
+	}
+
+	tabTodos := make([]string, len(response.Todos))
+	for i, todo := range response.Todos {
+
+		tags := todo.GetTags()
+		var tag string
+		for _, t := range tags {
+			tag = tag + "," + t.String()
+		}
+
+		tabTodo := fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
+			todo.GetId().String(),
+			todo.GetTitle().String(),
+			todo.GetDescription().String(),
+			todo.GetImage().String(),
+			tag,
+			jsonTime{todo.GetStartsAt()}.format(),
+			jsonTime{todo.GetEndsAt()}.format(),
+			jsonTime{todo.GetCreatedAt()}.format(),
+			jsonTime{todo.GetUpdatedAt()}.format(),
+		)
+
+		tabTodos[i] = tabTodo
+	}
+
+	resTsv := strings.Join(tabTodos, "\n")
+
+	fileName := "data.tsv"
+	ctx.Header("Content-Disposition", "attachment; filename="+fileName)
+	ctx.Header("Content-Type", "text/tab-separated-values")
+	ctx.Header("Accept-Length", fmt.Sprintf("%d", len(resTsv)))
+	ctx.Writer.Write([]byte(resTsv))
+	ctx.JSON(200, gin.H{
+		"msg": "Download file successfully",
+	})
 }
