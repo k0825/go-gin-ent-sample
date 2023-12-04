@@ -464,6 +464,62 @@ func (tr *TodoRepository) Update(ctx context.Context,
 	return todo, nil
 }
 
+func (tr *TodoRepository) CreateMany(ctx context.Context, todos []*domain.Todo) ([]*domain.Todo, error) {
+	if tr == nil {
+		return nil, errors.New("TodoRepositoryInterface pointer is nil")
+	}
+
+	client := tr.conn.GetTx(ctx)
+	if client == nil {
+		intErr := domainerrors.NewInternalServerError("transaction is not found")
+		return nil, errors.WithStack(intErr)
+	}
+
+	todoCreates := make([]*ent.TodoCreate, len(todos))
+	for i, todo := range todos {
+
+		// タグの作成
+		tagCreates := make([]*ent.TagCreate, len(todo.GetTags()))
+		for j, tag := range todo.GetTags() {
+			tagCreates[j].SetKeyword(tag.Value())
+		}
+		tagEnts, err := client.Tag.CreateBulk(tagCreates...).Save(ctx)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		todoCreates[i] = client.Todo.Create().
+			SetTitle(todo.GetTitle().Value()).
+			SetDescription(todo.GetDescription().Value()).
+			SetImage(todo.GetImage().Value()).
+			AddTags(tagEnts...).
+			SetStartsAt(todo.GetStartsAt()).
+			SetEndsAt(todo.GetEndsAt())
+	}
+
+	todoEnts, err := client.Todo.CreateBulk(todoCreates...).Save(ctx)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	dts := make([]*domain.Todo, len(todoEnts))
+	for i, todoEnt := range todoEnts {
+		tagEnts := todoEnt.Edges.Tags
+		if tagEnts == nil {
+			intErr := domainerrors.NewInternalServerError(("Tag is incorrect"))
+			wrapErr := errors.WithStack(intErr)
+			return nil, wrapErr
+		}
+
+		dt, err := models.ConvertEntToTodo(todoEnt, tagEnts)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		dts[i] = dt
+	}
+	return dts, nil
+}
+
 func (tr *TodoRepository) RunInTx(ctx context.Context, f func(context.Context) (any, error)) (any, error) {
 	value, err := tr.conn.RunInTx(ctx, f)
 

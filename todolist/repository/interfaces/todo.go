@@ -31,5 +31,6 @@ type TodoRepositoryInterface interface {
 		time.Time,
 		time.Time) (*models.Todo, error)
 	Delete(context.Context, models.TodoId) error
+	CreateMany(context.Context, []*models.Todo) ([]*models.Todo, error)
 	RunInTx(context.Context, func(context.Context) (any, error)) (any, error)
 }

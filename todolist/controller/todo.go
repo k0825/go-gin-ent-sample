@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -459,10 +460,10 @@ func (tdc *TodoController) ExportTodo(ctx *gin.Context) {
 			todo.GetDescription().String(),
 			todo.GetImage().String(),
 			tag,
-			jsonTime{todo.GetStartsAt()}.format(),
-			jsonTime{todo.GetEndsAt()}.format(),
-			jsonTime{todo.GetCreatedAt()}.format(),
-			jsonTime{todo.GetUpdatedAt()}.format(),
+			todo.GetStartsAt().Format(time.RFC3339),
+			todo.GetEndsAt().Format(time.RFC3339),
+			todo.GetCreatedAt().Format(time.RFC3339),
+			todo.GetUpdatedAt().Format(time.RFC3339),
 		)
 
 		tabTodos[i] = tabTodo
@@ -475,7 +476,27 @@ func (tdc *TodoController) ExportTodo(ctx *gin.Context) {
 	ctx.Header("Content-Type", "text/tab-separated-values")
 	ctx.Header("Accept-Length", fmt.Sprintf("%d", len(resTsv)))
 	ctx.Writer.Write([]byte(resTsv))
-	ctx.JSON(200, gin.H{
-		"msg": "Download file successfully",
-	})
+	ctx.JSON(200, nil)
+}
+
+func (tdc *TodoController) ImportTodo(ctx *gin.Context) {
+	file, err := ctx.FormFile("file")
+	if err != nil {
+		ctx.JSON(400, gin.H{"message": "ファイルの形式が正しくありません"})
+		return
+	}
+
+	err = ctx.SaveUploadedFile(file, "data.tsv")
+	if err != nil {
+		ctx.JSON(500, gin.H{"message": "問題が発生しました"})
+		return
+	}
+
+	tsvFile, err := os.Open("data.tsv")
+	if err != nil {
+		ctx.JSON(500, gin.H{"message": "問題が発生しました"})
+		return
+	}
+	defer os.Remove(tsvFile.Name())
+
 }
